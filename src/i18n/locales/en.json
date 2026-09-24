@@ -495,6 +495,7 @@
     "reset_credits_expiry_label": "Manual reset expiry ({{timezone}})",
     "reset_credit_number": "Reset {{index}}",
     "reset_credits_expiry_failed": "Failed to load manual reset expiry: {{message}}",
+    "reset_credits_expiry_unavailable": "Expiry dates are unavailable",
     "reset_credits_invalid_payload": "Invalid manual reset expiry response",
     "reset_button": "Reset quota",
     "reset_confirm_title": "Reset Codex quota",

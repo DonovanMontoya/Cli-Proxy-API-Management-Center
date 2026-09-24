@@ -29,11 +29,6 @@ export function rowSubtitleParts(
     const parts: string[] = [];
     const plan = getCodexPlanLabel(codex.planType, t);
     if (plan) parts.push(plan);
-    if (codex.rateLimitResetCreditsAvailableCount != null) {
-      parts.push(
-        `${t('codex_quota.reset_credits_label')} ${codex.rateLimitResetCreditsAvailableCount}`
-      );
-    }
     const until = codex.subscriptionActiveUntil ?? null;
     if (until !== null && until !== '') {
       const untilMs = resolveResetMs([until]);

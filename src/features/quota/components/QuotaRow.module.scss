@@ -127,7 +127,7 @@
 .cells {
   display: grid;
   /* Empty tracks keep each window in the same column across credentials. */
-  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   align-items: start;
   gap: 12px 16px;
   min-width: 0;
@@ -195,6 +195,110 @@
     font-weight: 650;
     color: var(--text-primary);
   }
+}
+
+.resetDetails {
+  position: relative;
+  width: max-content;
+  max-width: 100%;
+}
+
+.resetSummary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &:hover,
+  .resetDetails[open] & {
+    color: var(--text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+}
+
+.resetPopover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: $z-dropdown;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: max-content;
+  min-width: 230px;
+  max-width: min(300px, calc(100vw - 32px));
+  padding: 11px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--floating-surface);
+  box-shadow: var(--floating-shadow);
+}
+
+.resetPopoverTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.resetUnavailable {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.creditFoot {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+  font-family: $font-mono;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.creditLabel {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.creditTime {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.creditFoot .relativeSoon {
+  flex-shrink: 0;
+}
+
+.creditTime::before,
+.creditFoot .relativeSoon::before {
+  content: '·';
+  margin-right: 5px;
+  color: var(--text-quaternary);
+  font-weight: 400;
+}
+
+.creditFoot .absolute::before {
+  content: '·';
+  margin-right: 5px;
+  color: var(--text-quaternary);
+}
+
+.creditError {
+  color: var(--viz-failure);
+  font-size: 11px;
+  overflow-wrap: anywhere;
 }
 
 .meter {

@@ -34,21 +34,56 @@ describe('compact quota rows', () => {
     expect(maxMarkup).not.toContain('aria-disabled="true"');
   });
 
-  test('moves the Codex plan and reset count into plain account details', () => {
+  test('shows manual resets beside Codex usage and keeps the plan under the name', () => {
+    const expiresAt = new Date(
+      Date.now() + 12 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000
+    ).toISOString();
     const codex: CodexQuotaState = {
       status: 'success',
       planType: 'prolite',
       windows: [{ id: 'weekly', label: 'Weekly limit', usedPercent: 30 }],
       rateLimitResetCreditsAvailableCount: 2,
+      rateLimitResetCredits: [{ id: 'reset-1', status: 'available', grantedAt: '', expiresAt }],
     };
-    expect(rowSubtitleParts('codex', codex, i18n.t, Date.now())).toEqual([
-      'Pro 5x',
-      'Manual resets 2',
-    ]);
+    expect(rowSubtitleParts('codex', codex, i18n.t, Date.now())).toEqual(['Pro 5x']);
     const markup = renderToStaticMarkup(
       createElement(QuotaRowCells, { type: 'codex', quota: codex })
     );
     expect(markup).toContain('Weekly limit');
-    expect(markup).not.toContain('Manual resets');
+    expect(markup).toContain('Manual resets');
+    expect(markup).toContain('<strong>2</strong> available');
+    expect(markup).toContain('<details');
+    expect(markup).toContain('<summary');
+    expect(markup).toContain('Reset 1');
+    expect(markup).toContain('12 days');
+  });
+
+  test('explains when the API provides a reset count without expiry dates', () => {
+    const codex: CodexQuotaState = {
+      status: 'success',
+      windows: [],
+      rateLimitResetCreditsAvailableCount: 2,
+      rateLimitResetCredits: [],
+    };
+    const markup = renderToStaticMarkup(
+      createElement(QuotaRowCells, { type: 'codex', quota: codex })
+    );
+    expect(markup).toContain('2</strong> available');
+    expect(markup).toContain('Expiry dates are unavailable');
+  });
+
+  test('does not offer expiry details when no manual resets remain', () => {
+    const markup = renderToStaticMarkup(
+      createElement(QuotaRowCells, {
+        type: 'codex',
+        quota: {
+          status: 'success',
+          windows: [],
+          rateLimitResetCreditsAvailableCount: 0,
+        } satisfies CodexQuotaState,
+      })
+    );
+    expect(markup).toContain('<strong>0</strong> available');
+    expect(markup).not.toContain('<details');
   });
 });

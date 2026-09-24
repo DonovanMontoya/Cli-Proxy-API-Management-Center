@@ -498,6 +498,7 @@
     "reset_credits_expiry_label": "Срок действия ручных сбросов ({{timezone}})",
     "reset_credit_number": "Сброс {{index}}",
     "reset_credits_expiry_failed": "Не удалось загрузить срок действия ручных сбросов: {{message}}",
+    "reset_credits_expiry_unavailable": "Срок действия недоступен",
     "reset_credits_invalid_payload": "Недопустимый ответ о сроке действия ручных сбросов",
     "reset_button": "Сбросить квоту",
     "reset_confirm_title": "Сброс квоты Codex",
