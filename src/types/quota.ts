@@ -87,6 +87,7 @@ export interface CodexUsagePayload {
   additionalRateLimits?: CodexAdditionalRateLimit[] | null;
   rate_limit_reset_credits?: CodexRateLimitResetCredits | null;
   rateLimitResetCredits?: CodexRateLimitResetCredits | null;
+  model_usage?: Record<string, { available?: boolean | null } | null> | null;
 }
 
 // Claude API payload types
@@ -241,6 +242,8 @@ export interface CodexQuotaState {
   rateLimitResetCreditsApplicableAvailableCount?: number | null;
   rateLimitResetCredits?: CodexRateLimitResetCredit[];
   rateLimitResetCreditsError?: string;
+  /** Model slugs the usage payload reports as unavailable for this account. */
+  unavailableModels?: string[];
   error?: string;
   errorStatus?: number;
 }

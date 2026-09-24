@@ -1342,7 +1342,19 @@
     "weekday_wed": "三",
     "weekday_thu": "四",
     "weekday_fri": "五",
-    "weekday_sat": "六"
+    "weekday_sat": "六",
+    "summary_label": "额度概览",
+    "summary_of_capacity": "/ {{capacity}}%",
+    "summary_no_reset": "无待重置",
+    "summary_not_loaded": "加载额度后显示汇总",
+    "summary_no_windows": "未返回用量窗口",
+    "summary_restricted_count": "{{count}} / {{total}}",
+    "model_restricted": "不可用 {{model}}",
+    "model_restricted_plan_hint": "当前账号套餐不包含 {{model}}",
+    "model_restricted_reported_hint": "提供商报告该账号无法使用 {{model}}",
+    "privacy_hide_emails": "隐藏邮箱",
+    "privacy_show_emails": "显示邮箱",
+    "privacy_hint": "遮蔽凭证名称中的邮箱地址，便于截图分享"
   },
   "plugin_management": {
     "title": "插件管理",

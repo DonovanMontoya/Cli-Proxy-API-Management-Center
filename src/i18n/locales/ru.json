@@ -1347,7 +1347,19 @@
     "weekday_wed": "Ср",
     "weekday_thu": "Чт",
     "weekday_fri": "Пт",
-    "weekday_sat": "Сб"
+    "weekday_sat": "Сб",
+    "summary_label": "Сводка по квотам",
+    "summary_of_capacity": "из {{capacity}}%",
+    "summary_no_reset": "Сброс не ожидается",
+    "summary_not_loaded": "Загрузите квоты, чтобы увидеть итоги",
+    "summary_no_windows": "Окна использования не получены",
+    "summary_restricted_count": "{{count}} из {{total}}",
+    "model_restricted": "Нет {{model}}",
+    "model_restricted_plan_hint": "{{model}} не входит в тариф этого аккаунта",
+    "model_restricted_reported_hint": "Провайдер сообщает, что {{model}} недоступна для этого аккаунта",
+    "privacy_hide_emails": "Скрыть email",
+    "privacy_show_emails": "Показать email",
+    "privacy_hint": "Скрывать адреса email в именах учётных данных, например для скриншотов"
   },
   "plugin_management": {
     "title": "Управление плагинами",

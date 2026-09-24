@@ -1,7 +1,7 @@
 @use '../../styles/mixins' as *;
 
 /* ============================================================
- * 额度页壳层：纯布局，视觉细节都在各组件的 colocated 模块里。
+ * Quota page shell: layout only; visual details live in each component's colocated module.
  * ============================================================ */
 
 .page {
@@ -12,7 +12,7 @@
   min-width: 0;
 }
 
-/* ---------- 工作区（tabs + 网格 + 分页） ---------- */
+/* ---------- Workbench (tabs + rows + pagination) ---------- */
 
 .workbench {
   display: flex;
@@ -21,7 +21,7 @@
   min-width: 0;
 }
 
-/* 提供商导航独占一行，保留原生横向滚动。 */
+/* Provider navigation gets its own row and keeps native horizontal scrolling. */
 
 .tabsRow {
   display: flex;
@@ -142,7 +142,36 @@
   }
 }
 
+.privacyToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  margin-left: auto;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &[aria-pressed='true'] {
+    border-color: var(--border-primary);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
+  .privacyToggle:hover,
   .clearSearch:hover,
   .sort button[aria-haspopup='listbox']:hover {
     background: var(--bg-tertiary);
@@ -183,18 +212,41 @@
   overflow-wrap: anywhere;
 }
 
-/* ---------- 卡片网格 ----------
- * 列宽由 CSS 决定（不再用 JS 测量）：额度卡承载水位条，取 340px 下限，
- * 与认证文件页配额模式（.gridQuota）同一档。 */
+/* ---------- Credential rows, one section per provider ---------- */
 
-.grid {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
-  align-items: stretch;
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
 }
 
-/* ---------- 分页 ---------- */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.groupTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  padding: 0 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.groupCount {
+  font-family: $font-mono;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+/* ---------- Pagination ---------- */
 
 .pagination {
   display: flex;

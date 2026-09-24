@@ -1,6 +1,6 @@
 /**
- * Codex 额度数据层：用量窗口 + 套餐 + 重置积分（含消费流程）。
- * React-free / SCSS-free —— 由 tests/codexQuota.test.ts 直接消费。
+ * Codex quota data layer: usage windows + plan + reset credits (including redemption).
+ * React-free / SCSS-free — consumed directly by tests/codexQuota.test.ts.
  */
 
 import type { TFunction } from 'i18next';
@@ -56,6 +56,17 @@ export type CodexQuotaData = {
   rateLimitResetCredits: CodexRateLimitResetCredit[];
   rateLimitResetCreditsError: string;
   windows: CodexQuotaWindow[];
+  unavailableModels: string[];
+};
+
+/** Slugs whose `model_usage` entry explicitly says `available: false`. */
+export const parseCodexUnavailableModels = (payload: CodexUsagePayload): string[] => {
+  const usage = payload.model_usage;
+  if (!usage || typeof usage !== 'object') return [];
+  return Object.entries(usage)
+    .filter(([, entry]) => entry?.available === false)
+    .map(([slug]) => slug)
+    .sort();
 };
 
 export const buildCodexQuotaWindows = (
@@ -451,6 +462,7 @@ const fetchCodexQuota = async (file: AuthFileItem, t: TFunction): Promise<CodexQ
     rateLimitResetCredits: resetCreditsData.credits,
     rateLimitResetCreditsError: resetCreditsData.error,
     windows,
+    unavailableModels: parseCodexUnavailableModels(payload),
   };
 };
 
@@ -523,6 +535,7 @@ export const CODEX_CONFIG: QuotaProviderData<CodexQuotaState, CodexQuotaData> = 
       data.rateLimitResetCreditsApplicableAvailableCount,
     rateLimitResetCredits: data.rateLimitResetCredits,
     rateLimitResetCreditsError: data.rateLimitResetCreditsError,
+    unavailableModels: data.unavailableModels,
   }),
   buildErrorState: (message, status) => ({
     status: 'error',
