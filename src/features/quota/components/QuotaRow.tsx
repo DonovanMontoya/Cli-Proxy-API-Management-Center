@@ -6,7 +6,7 @@
  * other providers reuse their card body with its top-level children laid out
  * as column cells (QuotaRowBody.module.scss).
  *
- * - idle: an inline "load quota" button (upstream calls are never automatic);
+ * - idle: an inline load button while the automatic request starts;
  * - loading: ghost cells (aria-busy, visually hidden text equivalent);
  * - error: inline failure text, refresh retries;
  * - success: the provider body.
@@ -27,7 +27,8 @@ import { QUOTA_ADAPTERS, type QuotaCardState } from '../providers';
 import { isQuotaRefreshDisabled, type QuotaFileEntry } from '../logic';
 import type { ModelRestriction } from '../modelAccess';
 import { useNow } from '@/hooks/useNow';
-import { QuotaRowCells, hasRowCells, rowSubtitleParts } from './QuotaRowCells';
+import { QuotaRowCells } from './QuotaRowCells';
+import { hasRowCells, rowSubtitleParts } from './rowCellModel';
 import bodyStyles from './QuotaBody.module.scss';
 import rowBodyStyles from './QuotaRowBody.module.scss';
 import styles from './QuotaRow.module.scss';
@@ -102,6 +103,9 @@ export function QuotaRow(props: QuotaRowProps) {
   const now = useNow();
   const adapter = QUOTA_ADAPTERS[entry.type];
   const subtitle = rowSubtitleParts(entry.type, quota, t, now, i18n.resolvedLanguage);
+  const visibleRestrictions = restrictions.filter(
+    (restriction) => !(entry.type === 'claude' && restriction.model === 'Fable 5.1')
+  );
 
   const status = quota?.status ?? 'idle';
   const loading = status === 'loading';
@@ -143,14 +147,14 @@ export function QuotaRow(props: QuotaRowProps) {
             {displayName}
           </span>
         </div>
-        {(subtitle.length > 0 || restrictions.length > 0) && (
+        {(subtitle.length > 0 || visibleRestrictions.length > 0) && (
           <div className={styles.subtitle}>
             {subtitle.length > 0 && (
               <span className={styles.subtitleText} title={subtitle.join(' · ')}>
                 {subtitle.join(' · ')}
               </span>
             )}
-            {restrictions.map((restriction) => (
+            {visibleRestrictions.map((restriction) => (
               <span
                 key={restriction.model}
                 className={styles.restrictedBadge}

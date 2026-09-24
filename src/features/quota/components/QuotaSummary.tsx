@@ -54,7 +54,12 @@ export function QuotaSummary({
         const [headline, ...rest] = summary.windows;
         const iconSrc = getAuthFileIcon(summary.type, resolvedTheme);
         const typeLabel = getTypeLabel(t, summary.type);
-        const restrictions = Object.entries(restrictionCounts[summary.type] ?? {});
+        const restrictedFable =
+          summary.loadedCount > 0 &&
+          (restrictionCounts[summary.type]?.['Fable 5.1'] ?? 0) >= summary.loadedCount;
+        const restrictions = Object.entries(restrictionCounts[summary.type] ?? {}).filter(
+          ([model]) => !(summary.type === 'claude' && model === 'Fable 5.1')
+        );
         const reset = headline?.nextResetMs
           ? buildResetDisplay(null, headline.nextResetMs, nowMs, i18n.resolvedLanguage)
           : null;
@@ -129,7 +134,16 @@ export function QuotaSummary({
                 {rest
                   .filter((window) => window.capacity > 0)
                   .map((window) => (
-                    <li key={window.id} className={styles.secondaryRow}>
+                    <li
+                      key={window.id}
+                      className={
+                        summary.type === 'claude' &&
+                        window.id === 'seven-day-fable' &&
+                        restrictedFable
+                          ? `${styles.secondaryRow} ${styles.secondaryUnavailable}`
+                          : styles.secondaryRow
+                      }
+                    >
                       <span className={styles.secondaryLabel}>{windowLabel(t, window)}</span>
                       <span className={styles.secondaryValue}>
                         {Math.round(window.totalRemaining)}%

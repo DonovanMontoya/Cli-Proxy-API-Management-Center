@@ -192,6 +192,16 @@
   font-size: 11.5px;
 }
 
+.secondaryUnavailable {
+  color: var(--text-quaternary);
+
+  .secondaryLabel,
+  .secondaryValue,
+  .secondaryCapacity {
+    color: var(--text-quaternary);
+  }
+}
+
 .secondaryLabel {
   min-width: 0;
   color: var(--text-tertiary);

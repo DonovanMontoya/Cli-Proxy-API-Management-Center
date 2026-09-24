@@ -4,6 +4,7 @@
  */
 
 import type { AuthFileItem } from '@/types';
+import { getQuotaCacheKey } from '@/utils/quota/identity';
 import { ANTIGRAVITY_CONFIG } from './providers/antigravity/data';
 import { CLAUDE_CONFIG } from './providers/claude/data';
 import { CODEX_CONFIG } from './providers/codex/data';
@@ -29,14 +30,17 @@ export interface QuotaFileEntry {
   type: QuotaProviderType;
 }
 
-/** Load only credentials that have no quota result yet; errors need an explicit retry. */
-export function selectUnloadedQuotaEntries(
+/** Refresh each visible credential once per page visit, even when a prior visit cached it. */
+export function takeQuotaEntriesForVisit(
   entries: QuotaFileEntry[],
+  visited: Set<string>,
   getStatus: (entry: QuotaFileEntry) => string | undefined
 ): QuotaFileEntry[] {
   return entries.filter((entry) => {
-    const status = getStatus(entry);
-    return status === undefined || status === 'idle';
+    const key = `${entry.type}:${getQuotaCacheKey(entry.file)}`;
+    if (visited.has(key)) return false;
+    visited.add(key);
+    return getStatus(entry) !== 'loading';
   });
 }
 

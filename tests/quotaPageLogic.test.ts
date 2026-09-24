@@ -9,7 +9,7 @@ import {
   isQuotaRefreshDisabled,
   paginate,
   resolveQuotaProviderType,
-  selectUnloadedQuotaEntries,
+  takeQuotaEntriesForVisit,
   sortQuotaEntries,
   type QuotaFileEntry,
 } from '@/features/quota/logic';
@@ -40,7 +40,7 @@ describe('refresh-all list handoff', () => {
 });
 
 describe('automatic quota loading', () => {
-  test('loads unseen rows and leaves completed, loading, and failed rows alone', () => {
+  test('refreshes cached results once per page visit, then fetches newly visible rows', () => {
     const entries = classifyQuotaFiles(FILES);
     const statuses: Record<string, string | undefined> = {
       'claude-a.json': 'success',
@@ -48,11 +48,15 @@ describe('automatic quota loading', () => {
       'codex-b.json': 'error',
       'grok-a.json': 'idle',
     };
-    expect(
-      selectUnloadedQuotaEntries(entries, (entry) => statuses[entry.file.name]).map(
+    const visited = new Set<string>();
+    const take = (visible: typeof entries, keys: Set<string>) =>
+      takeQuotaEntriesForVisit(visible, keys, (entry) => statuses[entry.file.name]).map(
         (entry) => entry.file.name
-      )
-    ).toEqual(['grok-a.json', 'kimi-a.json']);
+      );
+    expect(take(entries.slice(0, 3), visited)).toEqual(['claude-a.json', 'codex-b.json']);
+    expect(take(entries.slice(0, 3), visited)).toEqual([]);
+    expect(take(entries.slice(3), visited)).toEqual(['grok-a.json', 'kimi-a.json']);
+    expect(take(entries.slice(0, 3), new Set())).toEqual(['claude-a.json', 'codex-b.json']);
   });
 });
 

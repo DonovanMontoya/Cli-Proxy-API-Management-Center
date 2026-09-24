@@ -43,7 +43,7 @@ import {
   filterEntriesByTab,
   filterEntriesBySearch,
   paginate,
-  selectUnloadedQuotaEntries,
+  takeQuotaEntriesForVisit,
   sortQuotaEntries,
   type QuotaFileEntry,
 } from './logic';
@@ -269,10 +269,14 @@ export function QuotaPage() {
 
   const { batchLoading, loadQuota } = useQuotaBatchLoader();
   const { resettingQuotaName, refreshQuota, resetQuota } = useQuotaActions(disableControls);
+  const visitRef = useRef({ generation: sessionGeneration, keys: new Set<string>() });
 
-  // The file list arrives first. Fetch quotas for the visible page as soon as it
-  // settles, and do the same when pagination or the active tab reveals new rows.
+  // The first view of each credential in this page visit gets a fresh quota.
+  // A new session clears the visit record so old responses cannot suppress it.
   useEffect(() => {
+    if (visitRef.current.generation !== sessionGeneration) {
+      visitRef.current = { generation: sessionGeneration, keys: new Set<string>() };
+    }
     if (
       loading ||
       batchLoading ||
@@ -281,7 +285,11 @@ export function QuotaPage() {
       filesGeneration !== sessionGeneration
     )
       return;
-    const targets = selectUnloadedQuotaEntries(pageItems, (entry) => getQuota(entry)?.status);
+    const targets = takeQuotaEntriesForVisit(
+      pageItems,
+      visitRef.current.keys,
+      (entry) => getQuota(entry)?.status
+    );
     if (targets.length > 0) void loadQuota(targets);
   }, [
     batchLoading,

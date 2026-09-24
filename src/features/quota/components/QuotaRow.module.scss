@@ -147,6 +147,19 @@
   min-width: 0;
 }
 
+.cellUnavailable {
+  .cellLabel,
+  .cellValue,
+  .relative,
+  .absolute {
+    color: var(--text-quaternary);
+  }
+
+  .meterFill {
+    background: var(--text-quaternary);
+  }
+}
+
 .cellHead {
   display: flex;
   align-items: baseline;
