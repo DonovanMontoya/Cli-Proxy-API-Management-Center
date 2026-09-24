@@ -62,6 +62,13 @@ export default defineConfig({
       }
     }
   },
+  server: {
+    // Proxy Management API calls to a local backend so the dev UI is same-origin.
+    // Override with CPA_BACKEND, e.g. CPA_BACKEND=http://127.0.0.1:8317 bun run dev
+    proxy: {
+      '/v0': process.env.CPA_BACKEND || 'http://127.0.0.1:8318'
+    }
+  },
   build: {
     target: 'es2020',
     outDir: 'dist',
