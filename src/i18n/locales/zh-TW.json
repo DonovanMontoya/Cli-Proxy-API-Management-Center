@@ -1368,7 +1368,19 @@
     "weekday_wed": "三",
     "weekday_thu": "四",
     "weekday_fri": "五",
-    "weekday_sat": "六"
+    "weekday_sat": "六",
+    "summary_label": "額度概覽",
+    "summary_of_capacity": "/ {{capacity}}%",
+    "summary_no_reset": "無待重置",
+    "summary_not_loaded": "載入額度後顯示彙總",
+    "summary_no_windows": "未回傳用量視窗",
+    "summary_restricted_count": "{{count}} / {{total}}",
+    "model_restricted": "不可用 {{model}}",
+    "model_restricted_plan_hint": "目前帳號方案不包含 {{model}}",
+    "model_restricted_reported_hint": "供應商回報此帳號無法使用 {{model}}",
+    "privacy_hide_emails": "隱藏信箱",
+    "privacy_show_emails": "顯示信箱",
+    "privacy_hint": "遮蔽憑證名稱中的電子郵件地址，方便截圖分享"
   },
   "plugin_management": {
     "title": "插件管理",

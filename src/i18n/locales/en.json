@@ -1312,6 +1312,7 @@
     "sort_default": "Default",
     "sort_soonest": "Soonest recovery",
     "meta_credentials": "{{count}} credentials",
+    "meta_credentials_one": "{{count}} credential",
     "meta_loaded": "{{count}} loaded",
     "meta_attention": "{{count}} need attention",
     "empty_title": "No quota-capable credentials",
@@ -1344,7 +1345,19 @@
     "weekday_wed": "Wed",
     "weekday_thu": "Thu",
     "weekday_fri": "Fri",
-    "weekday_sat": "Sat"
+    "weekday_sat": "Sat",
+    "summary_label": "Quota summary",
+    "summary_of_capacity": "of {{capacity}}%",
+    "summary_no_reset": "No reset pending",
+    "summary_not_loaded": "Load quota to see totals",
+    "summary_no_windows": "No usage windows reported",
+    "summary_restricted_count": "{{count}} of {{total}}",
+    "model_restricted": "No {{model}}",
+    "model_restricted_plan_hint": "{{model}} isn't included in this account's plan",
+    "model_restricted_reported_hint": "The provider reports {{model}} as unavailable for this account",
+    "privacy_hide_emails": "Hide emails",
+    "privacy_show_emails": "Show emails",
+    "privacy_hint": "Mask email addresses in credential names, e.g. before taking a screenshot"
   },
   "plugin_management": {
     "title": "Plugin Management",

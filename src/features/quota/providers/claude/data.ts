@@ -1,6 +1,6 @@
 /**
- * Claude 额度数据层：用量窗口 + 套餐 + 额外用量。
- * React-free / SCSS-free —— 由 tests/claudeFableQuota.test.ts 直接消费。
+ * Claude quota data layer: usage windows + plan + extra usage.
+ * React-free / SCSS-free — consumed directly by tests/claudeFableQuota.test.ts.
  */
 
 import type { TFunction } from 'i18next';
@@ -45,7 +45,8 @@ const findFableUsageLimit = (payload: ClaudeUsagePayload) => {
     const modelName = (normalizeStringValue(limit?.scope?.model?.display_name) ?? '')
       .trim()
       .toLowerCase();
-    const isFable = modelName === 'fable' || modelName === 'fable 5';
+    // Matches 'Fable', 'Fable 5', 'Fable 5.1', … but not other models.
+    const isFable = /^fable(\s+\d+(\.\d+)?)?$/.test(modelName);
     return kind === 'weekly_scoped' && isFable && normalizeNumberValue(limit?.percent) !== null;
   });
 
