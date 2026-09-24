@@ -1357,7 +1357,9 @@
     "model_restricted_reported_hint": "The provider reports {{model}} as unavailable for this account",
     "privacy_hide_emails": "Hide emails",
     "privacy_show_emails": "Show emails",
-    "privacy_hint": "Mask email addresses in credential names, e.g. before taking a screenshot"
+    "privacy_hint": "Mask email addresses in credential names, e.g. before taking a screenshot",
+    "row_renews": "renews {{date}}",
+    "row_available": "available"
   },
   "plugin_management": {
     "title": "Plugin Management",

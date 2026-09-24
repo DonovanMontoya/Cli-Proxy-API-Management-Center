@@ -9,6 +9,7 @@ import {
   isQuotaRefreshDisabled,
   paginate,
   resolveQuotaProviderType,
+  selectUnloadedQuotaEntries,
   sortQuotaEntries,
   type QuotaFileEntry,
 } from '@/features/quota/logic';
@@ -35,6 +36,23 @@ describe('refresh-all list handoff', () => {
     expect(canRefreshQuotaAfterList(2, 2, 1, false, false)).toBe(false);
     expect(canRefreshQuotaAfterList(1, 1, null, false, false)).toBe(false);
     expect(canRefreshQuotaAfterList(1, 1, 1, false, true)).toBe(false);
+  });
+});
+
+describe('automatic quota loading', () => {
+  test('loads unseen rows and leaves completed, loading, and failed rows alone', () => {
+    const entries = classifyQuotaFiles(FILES);
+    const statuses: Record<string, string | undefined> = {
+      'claude-a.json': 'success',
+      'codex-a.json': 'loading',
+      'codex-b.json': 'error',
+      'grok-a.json': 'idle',
+    };
+    expect(
+      selectUnloadedQuotaEntries(entries, (entry) => statuses[entry.file.name]).map(
+        (entry) => entry.file.name
+      )
+    ).toEqual(['grok-a.json', 'kimi-a.json']);
   });
 });
 

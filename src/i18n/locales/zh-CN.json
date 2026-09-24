@@ -1354,7 +1354,9 @@
     "model_restricted_reported_hint": "提供商报告该账号无法使用 {{model}}",
     "privacy_hide_emails": "隐藏邮箱",
     "privacy_show_emails": "显示邮箱",
-    "privacy_hint": "遮蔽凭证名称中的邮箱地址，便于截图分享"
+    "privacy_hint": "遮蔽凭证名称中的邮箱地址，便于截图分享",
+    "row_renews": "{{date}} 续费",
+    "row_available": "可用"
   },
   "plugin_management": {
     "title": "插件管理",

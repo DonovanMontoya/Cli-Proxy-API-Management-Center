@@ -29,6 +29,17 @@ export interface QuotaFileEntry {
   type: QuotaProviderType;
 }
 
+/** Load only credentials that have no quota result yet; errors need an explicit retry. */
+export function selectUnloadedQuotaEntries(
+  entries: QuotaFileEntry[],
+  getStatus: (entry: QuotaFileEntry) => string | undefined
+): QuotaFileEntry[] {
+  return entries.filter((entry) => {
+    const status = getStatus(entry);
+    return status === undefined || status === 'idle';
+  });
+}
+
 /** A refresh-all intent belongs to the session that requested a successful list read. */
 export function canRefreshQuotaAfterList(
   requestedSession: number,
@@ -87,8 +98,7 @@ export function filterEntriesBySearch(entries: QuotaFileEntry[], search: string)
  * Credentials with no instant — not loaded yet, failed, or reporting no
  * upcoming reset — sink to the bottom rather than sorting as "now". They keep
  * their incoming provider-grouped order, so the unloaded tail still reads like
- * the default view instead of an arbitrary shuffle. Because loading is
- * click-to-fetch, that tail is most of the list until the user asks for data.
+ * the default view instead of an arbitrary shuffle while requests complete.
  *
  * The original index is the final tiebreak, making stability an asserted
  * property rather than an assumption about the engine's sort.

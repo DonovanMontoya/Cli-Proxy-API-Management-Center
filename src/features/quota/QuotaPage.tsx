@@ -2,7 +2,7 @@
  * Quota page: summary bar, provider tabs, and credential rows grouped by provider.
  *
  * Behavioural contracts kept through the redesign:
- * - existing providers load on click; Devin queries once when first visible, never polls;
+ * - visible credentials load on first visit; explicit refresh remains available;
  * - cacheGeneration session isolation + request-id dedup (see useQuotaBatchLoader);
  * - quota caches are pruned per provider when the file list changes (no stale deleted files);
  * - useHeaderRefresh single slot: this page is the only registrant, global refresh = refetch files.
@@ -43,13 +43,13 @@ import {
   filterEntriesByTab,
   filterEntriesBySearch,
   paginate,
+  selectUnloadedQuotaEntries,
   sortQuotaEntries,
   type QuotaFileEntry,
 } from './logic';
 import { nextRecoveryMs } from './resetSchedule';
 import { QUOTA_ADAPTERS, getQuotaSetter, type QuotaCardState } from './providers';
 import type { QuotaProviderType } from './providers/types';
-import { useDevinQuotaAutoLoad } from './providers/devin/useDevinQuotaAutoLoad';
 import { useQuotaActions } from './hooks/useQuotaActions';
 import { useQuotaBatchLoader } from './hooks/useQuotaBatchLoader';
 import { readQuotaUiState, writeQuotaUiState } from './uiState';
@@ -270,6 +270,31 @@ export function QuotaPage() {
   const { batchLoading, loadQuota } = useQuotaBatchLoader();
   const { resettingQuotaName, refreshQuota, resetQuota } = useQuotaActions(disableControls);
 
+  // The file list arrives first. Fetch quotas for the visible page as soon as it
+  // settles, and do the same when pagination or the active tab reveals new rows.
+  useEffect(() => {
+    if (
+      loading ||
+      batchLoading ||
+      error ||
+      disableControls ||
+      filesGeneration !== sessionGeneration
+    )
+      return;
+    const targets = selectUnloadedQuotaEntries(pageItems, (entry) => getQuota(entry)?.status);
+    if (targets.length > 0) void loadQuota(targets);
+  }, [
+    batchLoading,
+    disableControls,
+    error,
+    filesGeneration,
+    getQuota,
+    loading,
+    loadQuota,
+    pageItems,
+    sessionGeneration,
+  ]);
+
   const pendingRefreshRef = useRef<number | null>(null);
   const prevLoadingRef = useRef(loading);
 
@@ -305,16 +330,6 @@ export function QuotaPage() {
       void loadQuota(pageItems);
     }
   }, [disableControls, error, filesGeneration, loading, loadQuota, pageItems, sessionGeneration]);
-
-  useDevinQuotaAutoLoad(
-    pageItems,
-    disableControls ||
-      loading ||
-      batchLoading ||
-      Boolean(error) ||
-      filesGeneration !== sessionGeneration,
-    loadQuota
-  );
 
   const canUseActions = !disableControls && !loading && filesGeneration === sessionGeneration;
 

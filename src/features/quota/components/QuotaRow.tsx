@@ -2,8 +2,9 @@
  * One credential as a table-like row: identity | usage-window cells | actions.
  *
  * Rows stay compact with a couple of credentials and scale to dozens without
- * changing shape. Provider bodies are shared with the auth-file cards; here
- * their top-level children become the row's column cells (QuotaRowBody.module.scss).
+ * changing shape. Claude and Codex render row-native cells (QuotaRowCells);
+ * other providers reuse their card body with its top-level children laid out
+ * as column cells (QuotaRowBody.module.scss).
  *
  * - idle: an inline "load quota" button (upstream calls are never automatic);
  * - loading: ghost cells (aria-busy, visually hidden text equivalent);
@@ -25,6 +26,8 @@ import { bindQuotaClasses, type QuotaClassMap } from '../types';
 import { QUOTA_ADAPTERS, type QuotaCardState } from '../providers';
 import { isQuotaRefreshDisabled, type QuotaFileEntry } from '../logic';
 import type { ModelRestriction } from '../modelAccess';
+import { useNow } from '@/hooks/useNow';
+import { QuotaRowCells, hasRowCells, rowSubtitleParts } from './QuotaRowCells';
 import bodyStyles from './QuotaBody.module.scss';
 import rowBodyStyles from './QuotaRowBody.module.scss';
 import styles from './QuotaRow.module.scss';
@@ -95,8 +98,10 @@ export function QuotaRow(props: QuotaRowProps) {
     onRefresh,
     onReset,
   } = props;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const now = useNow();
   const adapter = QUOTA_ADAPTERS[entry.type];
+  const subtitle = rowSubtitleParts(entry.type, quota, t, now, i18n.resolvedLanguage);
 
   const status = quota?.status ?? 'idle';
   const loading = status === 'loading';
@@ -138,8 +143,13 @@ export function QuotaRow(props: QuotaRowProps) {
             {displayName}
           </span>
         </div>
-        {restrictions.length > 0 && (
-          <div className={styles.badges}>
+        {(subtitle.length > 0 || restrictions.length > 0) && (
+          <div className={styles.subtitle}>
+            {subtitle.length > 0 && (
+              <span className={styles.subtitleText} title={subtitle.join(' · ')}>
+                {subtitle.join(' · ')}
+              </span>
+            )}
             {restrictions.map((restriction) => (
               <span
                 key={restriction.model}
@@ -183,6 +193,8 @@ export function QuotaRow(props: QuotaRowProps) {
           <div className={styles.errorText} role="alert">
             {t(`${adapter.i18nPrefix}.load_failed`, { message: errorMessage })}
           </div>
+        ) : quota && hasRowCells(entry.type) ? (
+          <QuotaRowCells type={entry.type} quota={quota} />
         ) : quota ? (
           <adapter.Body quota={quota} classes={rowQuotaClasses} />
         ) : null}

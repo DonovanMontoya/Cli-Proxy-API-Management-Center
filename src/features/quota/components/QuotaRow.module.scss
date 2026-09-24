@@ -8,14 +8,13 @@
 
 .list {
   display: grid;
-  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr) max-content;
+  grid-template-columns: minmax(180px, 250px) minmax(0, 1fr) max-content;
   margin: 0;
   padding: 0;
   list-style: none;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background: var(--bg-primary);
-  overflow: hidden;
+  /* Open list: hairline dividers only, no boxed panel around the rows. */
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .row {
@@ -23,8 +22,8 @@
   display: grid;
   grid-template-columns: subgrid;
   align-items: center;
-  column-gap: 24px;
-  padding: 14px 18px;
+  column-gap: 18px;
+  padding: 14px 12px;
   min-width: 0;
   transition: background-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out);
 
@@ -35,7 +34,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   .row:hover {
-    background: color-mix(in srgb, var(--text-primary) 3%, var(--bg-primary));
+    background: color-mix(in srgb, var(--text-primary) 3%, transparent);
   }
 }
 
@@ -89,10 +88,20 @@
   @include text-ellipsis;
 }
 
-.badges {
+.subtitle {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.subtitleText {
+  min-width: 0;
+  max-width: 100%;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  @include text-ellipsis;
 }
 
 .restrictedBadge {
@@ -117,15 +126,122 @@
 
 .cells {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  /* Empty tracks keep each window in the same column across credentials. */
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
   align-items: start;
-  gap: 12px 24px;
+  gap: 12px 16px;
   min-width: 0;
 }
 
 .cells.cells > * {
   min-width: 0;
   margin: 0;
+}
+
+/* ---------- window / stat cells (QuotaRowCells) ---------- */
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.cellHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cellLabel {
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  @include text-ellipsis;
+}
+
+.cellValue {
+  flex-shrink: 0;
+  font-family: $font-mono;
+  font-size: 13px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.statValue {
+  font-size: 12.5px;
+  line-height: 1.2;
+  color: var(--text-tertiary);
+
+  strong {
+    font-family: $font-mono;
+    font-size: 13px;
+    font-weight: 650;
+    color: var(--text-primary);
+  }
+}
+
+.meter {
+  height: 5px;
+  border-radius: $radius-full;
+  background: color-mix(in srgb, var(--text-primary) 9%, transparent);
+  overflow: hidden;
+}
+
+.meterFill {
+  height: 100%;
+  border-radius: $radius-full;
+  transition: width 360ms var(--ease-out-strong, ease);
+}
+
+.levelHigh {
+  background: var(--viz-success);
+}
+
+.levelMedium {
+  background: var(--quota-medium-color);
+}
+
+.levelLow {
+  background: var(--viz-failure);
+}
+
+.cellFoot {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+  font-family: $font-mono;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.relative {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.relativeSoon {
+  color: var(--viz-failure);
+  font-weight: 600;
+}
+
+.absolute {
+  min-width: 0;
+  color: var(--text-quaternary);
+  @include text-ellipsis;
+}
+
+/* Dot between two present halves of a footer line. */
+.cellFoot > * + *::before {
+  content: '·';
+  margin-right: 5px;
+  color: var(--text-quaternary);
+  font-weight: 400;
 }
 
 .idleButton {
@@ -303,6 +419,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .row,
+  .meterFill,
   .idleButton,
   .actionButton {
     transition: none;

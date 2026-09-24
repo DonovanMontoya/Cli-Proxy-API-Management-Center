@@ -1380,7 +1380,9 @@
     "model_restricted_reported_hint": "供應商回報此帳號無法使用 {{model}}",
     "privacy_hide_emails": "隱藏信箱",
     "privacy_show_emails": "顯示信箱",
-    "privacy_hint": "遮蔽憑證名稱中的電子郵件地址，方便截圖分享"
+    "privacy_hint": "遮蔽憑證名稱中的電子郵件地址，方便截圖分享",
+    "row_renews": "{{date}} 續訂",
+    "row_available": "可用"
   },
   "plugin_management": {
     "title": "插件管理",

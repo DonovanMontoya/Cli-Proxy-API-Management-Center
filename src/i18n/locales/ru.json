@@ -1359,7 +1359,9 @@
     "model_restricted_reported_hint": "Провайдер сообщает, что {{model}} недоступна для этого аккаунта",
     "privacy_hide_emails": "Скрыть email",
     "privacy_show_emails": "Показать email",
-    "privacy_hint": "Скрывать адреса email в именах учётных данных, например для скриншотов"
+    "privacy_hint": "Скрывать адреса email в именах учётных данных, например для скриншотов",
+    "row_renews": "продление {{date}}",
+    "row_available": "доступно"
   },
   "plugin_management": {
     "title": "Управление плагинами",
