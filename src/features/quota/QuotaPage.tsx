@@ -19,7 +19,13 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
 import { useNow } from '@/hooks/useNow';
 import { useRevealGroup } from '@/hooks/motion';
-import { useAuthStore, useQuotaStore, useThemeStore } from '@/stores';
+import {
+  useAuthStore,
+  useMaskEmails,
+  usePrivacyStore,
+  useQuotaStore,
+  useThemeStore,
+} from '@/stores';
 import type { AuthFileItem, ResolvedTheme } from '@/types';
 import { getQuotaCacheKey, getQuotaDisplayName } from '@/utils/quota/identity';
 import { ProviderTabs } from '@/features/authFiles/components/ProviderTabs';
@@ -53,7 +59,6 @@ import type { QuotaProviderType } from './providers/types';
 import { useQuotaActions } from './hooks/useQuotaActions';
 import { useQuotaBatchLoader } from './hooks/useQuotaBatchLoader';
 import { readQuotaUiState, writeQuotaUiState } from './uiState';
-import { maskEmails, readPrivacyMode, writePrivacyMode } from './privacy';
 import { restrictedModelsFor } from './modelAccess';
 import { buildProviderSummaries } from './summaryModel';
 import styles from './QuotaPage.module.scss';
@@ -75,18 +80,10 @@ export function QuotaPage() {
   );
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [privacyMode, setPrivacyMode] = useState(readPrivacyMode);
-  const togglePrivacyMode = useCallback(() => {
-    setPrivacyMode((prev) => {
-      writePrivacyMode(!prev);
-      return !prev;
-    });
-  }, []);
+  const privacyMode = usePrivacyStore((state) => state.hideEmails);
+  const togglePrivacyMode = usePrivacyStore((state) => state.toggleHideEmails);
   /** Rows and timeline lanes share one label; privacy mode masks emails in both. */
-  const displayNameFor = useCallback(
-    (name: string) => (privacyMode ? maskEmails(name) : name),
-    [privacyMode]
-  );
+  const displayNameFor = useMaskEmails();
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Header + tabs entrance cascade (title → meta → action → tabs, 70ms apart)
   const revealRef = useRevealGroup<HTMLDivElement>();
@@ -429,16 +426,14 @@ export function QuotaPage() {
             className={styles.privacyToggle}
             onClick={togglePrivacyMode}
             aria-pressed={privacyMode}
-            title={t('quota_management.privacy_hint')}
+            title={t('privacy.hint')}
           >
             {privacyMode ? (
               <IconEyeOff size={15} aria-hidden="true" />
             ) : (
               <IconEye size={15} aria-hidden="true" />
             )}
-            {privacyMode
-              ? t('quota_management.privacy_show_emails')
-              : t('quota_management.privacy_hide_emails')}
+            {privacyMode ? t('privacy.show_emails') : t('privacy.hide_emails')}
           </button>
         </div>
 

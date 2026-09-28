@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { TFunction } from 'i18next';
-import { maskEmails } from '@/features/quota/privacy';
+import { maskEmails } from '@/utils/privacy';
 import { restrictedModelsFor } from '@/features/quota/modelAccess';
 import { buildProviderSummaries } from '@/features/quota/summaryModel';
 import { buildClaudeQuotaWindows } from '@/features/quota/providers/claude/data';

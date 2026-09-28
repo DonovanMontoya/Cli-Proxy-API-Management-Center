@@ -29,6 +29,7 @@ import {
   type ResolvedTheme,
 } from '@/features/authFiles/constants';
 import { deriveAuthFileIdentity } from '@/features/authFiles/identity';
+import { useMaskEmails } from '@/stores';
 import { resolveAuthFileQuotaType } from '@/features/authFiles/logic';
 import type { AuthFileStatusBarData } from '@/features/authFiles/hooks/useAuthFilesStatusBarCache';
 import { AuthFileQuotaSection } from '@/features/authFiles/components/AuthFileQuotaSection';
@@ -107,6 +108,8 @@ export function AuthFileCard(props: AuthFileCardProps) {
   const noteValue = typeof file.note === 'string' ? file.note.trim() : '';
   // 主行显示账号（email/项目 ID），文件名降为满卡宽的 mono 副行
   const identity = deriveAuthFileIdentity(file);
+  const mask = useMaskEmails();
+  const displayFileName = mask(file.name);
 
   // 挂载时捕获一次入场延迟：父级随后传 null 也不会中断已开始的动画
   const [mountEntranceDelayMs] = useState<number | null>(entranceDelayMs ?? null);
@@ -131,8 +134,8 @@ export function AuthFileCard(props: AuthFileCardProps) {
             checked={selected}
             onChange={() => onToggleSelect(file.name)}
             className={styles.selection}
-            ariaLabel={t('auth_files.card_select', { name: file.name })}
-            title={t('auth_files.card_select', { name: file.name })}
+            ariaLabel={t('auth_files.card_select', { name: displayFileName })}
+            title={t('auth_files.card_select', { name: displayFileName })}
           />
         )}
         <h3 className={styles.identity}>
@@ -148,9 +151,9 @@ export function AuthFileCard(props: AuthFileCardProps) {
           </span>
           <span
             className={`${styles.account} ${identity.kind === 'fileName' ? styles.accountMono : ''}`}
-            title={identity.primary}
+            title={mask(identity.primary)}
           >
-            {identity.primary}
+            {mask(identity.primary)}
           </span>
         </h3>
         {isRuntimeOnly && (
@@ -159,21 +162,21 @@ export function AuthFileCard(props: AuthFileCardProps) {
       </header>
 
       {identity.secondary && (
-        <p className={styles.fileName} title={identity.fullName}>
-          {identity.secondary}
+        <p className={styles.fileName} title={mask(identity.fullName)}>
+          {mask(identity.secondary)}
         </p>
       )}
 
       {!compact && noteValue && (
-        <p className={styles.note} title={noteValue}>
-          {noteValue}
+        <p className={styles.note} title={mask(noteValue)}>
+          {mask(noteValue)}
         </p>
       )}
 
       {rawStatusMessage && hasStatusWarning && (
-        <div className={styles.warning} title={rawStatusMessage}>
+        <div className={styles.warning} title={mask(rawStatusMessage)}>
           <IconInfo className={styles.warningIcon} size={14} />
-          <span>{rawStatusMessage}</span>
+          <span>{mask(rawStatusMessage)}</span>
         </div>
       )}
 
@@ -304,7 +307,7 @@ export function AuthFileCard(props: AuthFileCardProps) {
           <div className={styles.toggleWrap}>
             <span className={styles.toggleLabel}>{t('auth_files.status_toggle_label')}</span>
             <ToggleSwitch
-              ariaLabel={t('auth_files.card_toggle', { name: file.name })}
+              ariaLabel={t('auth_files.card_toggle', { name: displayFileName })}
               checked={!file.disabled}
               disabled={disableControls || statusUpdating[file.name] === true || isManualRefreshing}
               onChange={(value) => onToggleStatus(file, value)}

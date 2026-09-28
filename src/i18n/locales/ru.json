@@ -92,6 +92,11 @@
     "refresh_all": "Обновить всё",
     "logout": "Выйти"
   },
+  "privacy": {
+    "hide_emails": "Скрыть email",
+    "show_emails": "Показать email",
+    "hint": "Скрывать адреса email во всей панели, например для скриншотов"
+  },
   "connection": {
     "status": "Статус подключения:"
   },
@@ -1358,9 +1363,6 @@
     "model_restricted": "Нет {{model}}",
     "model_restricted_plan_hint": "{{model}} не входит в тариф этого аккаунта",
     "model_restricted_reported_hint": "Провайдер сообщает, что {{model}} недоступна для этого аккаунта",
-    "privacy_hide_emails": "Скрыть email",
-    "privacy_show_emails": "Показать email",
-    "privacy_hint": "Скрывать адреса email в именах учётных данных, например для скриншотов",
     "row_renews": "продление {{date}}",
     "row_available": "доступно"
   },

@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/icons';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { useAuthStore, useConfigStore, useNotificationStore } from '@/stores';
+import { useAuthStore, useConfigStore, useMaskEmails, useNotificationStore } from '@/stores';
 import { logsApi, type ErrorLogFile, type LogsQuery } from '@/services/api/logs';
 import { copyToClipboard } from '@/utils/clipboard';
 import { getErrorMessage } from '@/utils/helpers';
@@ -137,6 +137,7 @@ type TabType = 'logs' | 'errors';
 export function LogsPage() {
   const { t } = useTranslation();
   const { showNotification, showConfirmation } = useNotificationStore();
+  const mask = useMaskEmails();
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
   const apiBase = useAuthStore((state) => state.apiBase);
   const managementKey = useAuthStore((state) => state.managementKey);
@@ -599,6 +600,10 @@ export function LogsPage() {
   );
 
   const rawVisibleText = useMemo(() => filteredLines.join('\n'), [filteredLines]);
+  const displayRawText = useMemo(
+    () => (showRawLogs ? mask(rawVisibleText) : ''),
+    [mask, rawVisibleText, showRawLogs]
+  );
 
   const { canLoadMore, handleLogScroll, logViewerRef, requestScrollToBottom } = useLogScroller({
     logState,
@@ -1027,7 +1032,7 @@ export function LogsPage() {
                 )}
                 {showRawLogs ? (
                   <pre className={styles.rawLog} spellCheck={false}>
-                    {rawVisibleText}
+                    {displayRawText}
                   </pre>
                 ) : (
                   <div className={styles.logList}>
@@ -1074,8 +1079,8 @@ export function LogsPage() {
                             )}
 
                             {line.source && (
-                              <span className={styles.source} title={line.source}>
-                                {line.source}
+                              <span className={styles.source} title={mask(line.source)}>
+                                {mask(line.source)}
                               </span>
                             )}
 
@@ -1116,12 +1121,14 @@ export function LogsPage() {
                             )}
 
                             {line.path && (
-                              <span className={styles.path} title={line.path}>
-                                {line.path}
+                              <span className={styles.path} title={mask(line.path)}>
+                                {mask(line.path)}
                               </span>
                             )}
 
-                            {line.message && <span className={styles.message}>{line.message}</span>}
+                            {line.message && (
+                              <span className={styles.message}>{mask(line.message)}</span>
+                            )}
                           </div>
                         </div>
                       );
@@ -1281,7 +1288,7 @@ export function LogsPage() {
           {errorLogViewer.status === 'ready' &&
             (errorLogViewer.text ? (
               <pre className={styles.errorLogContent} spellCheck={false}>
-                {errorLogViewer.text}
+                {mask(errorLogViewer.text)}
               </pre>
             ) : (
               <div className="hint">{t('logs.error_log_empty_content')}</div>
