@@ -17,6 +17,7 @@ import {
   supportsAuthFileWebsockets,
 } from '@/features/authFiles/constants';
 import { MAX_CREDENTIAL_WEIGHT } from '@/utils/credentialWeight';
+import { useMaskEmails } from '@/stores';
 import { AuthFileExcludedModelsField } from './AuthFileExcludedModelsField';
 import styles from './AuthFileDetailsSheet.module.scss';
 
@@ -96,6 +97,7 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
       return text;
     }
   };
+  const mask = useMaskEmails();
   const previewText = formatJsonText(updatedText);
   const invalidContentPreview = editor?.invalidContentPreview ?? '';
   const fileInfoText = editor?.fileInfoText ?? '';
@@ -124,7 +126,7 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
       size="md"
       closeDisabled={editor?.saving === true}
       eyebrow={t('auth_files.prefix_proxy_button')}
-      title={editor?.fileName ?? ''}
+      title={mask(editor?.fileName ?? '')}
       footer={
         <>
           <Button
@@ -173,7 +175,12 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
               {editor.error && <div className={styles.error}>{editor.error}</div>}
               <div className={styles.jsonWrapper}>
                 <label className={styles.label}>{t('auth_files.prefix_proxy_info_label')}</label>
-                <textarea className={styles.textarea} rows={8} readOnly value={displayInfoText} />
+                <textarea
+                  className={styles.textarea}
+                  rows={8}
+                  readOnly
+                  value={mask(displayInfoText)}
+                />
               </div>
               <div className={styles.jsonWrapper}>
                 <label className={styles.label}>
@@ -182,9 +189,14 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
                     : t('auth_files.prefix_proxy_invalid_content_label')}
                 </label>
                 {editor.json ? (
-                  <textarea className={styles.textarea} rows={10} readOnly value={previewText} />
+                  <textarea
+                    className={styles.textarea}
+                    rows={10}
+                    readOnly
+                    value={mask(previewText)}
+                  />
                 ) : (
-                  <pre className={styles.invalidPreview}>{invalidContentPreview}</pre>
+                  <pre className={styles.invalidPreview}>{mask(invalidContentPreview)}</pre>
                 )}
               </div>
               {editor.json && (

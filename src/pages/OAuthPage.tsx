@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { IconPlug } from '@/components/ui/icons';
-import { useAuthStore, useNotificationStore, useThemeStore } from '@/stores';
+import { useAuthStore, useMaskEmails, useNotificationStore, useThemeStore } from '@/stores';
 import { oauthApi, pluginsApi, type BuiltInOAuthProvider } from '@/services/api';
 import { vertexApi, type VertexImportResponse } from '@/services/api/vertex';
 import { copyToClipboard } from '@/utils/clipboard';
@@ -270,6 +270,7 @@ const resolveCallbackUrl = (provider: string, input: string, state?: string): st
 
 export function OAuthPage() {
   const { t } = useTranslation();
+  const mask = useMaskEmails();
   const navigate = useNavigate();
   const apiBase = useAuthStore((state) => state.apiBase);
   const { showNotification } = useNotificationStore();
@@ -827,7 +828,7 @@ export function OAuthPage() {
               )}
               {state.callbackStatus === 'error' && (
                 <div className="status-badge error">
-                  {t('auth_login.oauth_callback_status_error')} {state.callbackError || ''}
+                  {t('auth_login.oauth_callback_status_error')} {mask(state.callbackError || '')}
                 </div>
               )}
             </div>
@@ -837,7 +838,7 @@ export function OAuthPage() {
               {state.status === 'success'
                 ? getProviderText(provider, 'oauth_status_success')
                 : state.status === 'error'
-                  ? `${getProviderText(provider, 'oauth_status_error')} ${state.error || ''}`
+                  ? `${getProviderText(provider, 'oauth_status_error')} ${mask(state.error || '')}`
                   : getProviderText(provider, 'oauth_status_waiting')}
             </div>
           )}
@@ -918,7 +919,7 @@ export function OAuthPage() {
                       vertexState.fileName ? '' : styles.fileNamePlaceholder
                     }`.trim()}
                   >
-                    {vertexState.fileName || t('vertex_import.file_placeholder')}
+                    {mask(vertexState.fileName) || t('vertex_import.file_placeholder')}
                   </div>
                 </div>
                 <div className={styles.cardHintSecondary}>{t('vertex_import.file_hint')}</div>
@@ -930,7 +931,9 @@ export function OAuthPage() {
                   onChange={handleVertexFileChange}
                 />
               </div>
-              {vertexState.error && <div className="status-badge error">{vertexState.error}</div>}
+              {vertexState.error && (
+                <div className="status-badge error">{mask(vertexState.error)}</div>
+              )}
               {vertexState.result && (
                 <div className={styles.connectionBox}>
                   <div className={styles.connectionLabel}>{t('vertex_import.result_title')}</div>
@@ -948,7 +951,9 @@ export function OAuthPage() {
                         <span className={styles.keyValueKey}>
                           {t('vertex_import.result_email')}
                         </span>
-                        <span className={styles.keyValueValue}>{vertexState.result.email}</span>
+                        <span className={styles.keyValueValue}>
+                          {mask(vertexState.result.email)}
+                        </span>
                       </div>
                     )}
                     {vertexState.result.location && (
@@ -962,7 +967,9 @@ export function OAuthPage() {
                     {vertexState.result.authFile && (
                       <div className={styles.keyValueItem}>
                         <span className={styles.keyValueKey}>{t('vertex_import.result_file')}</span>
-                        <span className={styles.keyValueValue}>{vertexState.result.authFile}</span>
+                        <span className={styles.keyValueValue}>
+                          {mask(vertexState.result.authFile)}
+                        </span>
                       </div>
                     )}
                   </div>

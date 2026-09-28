@@ -92,6 +92,11 @@
     "refresh_all": "Refresh All",
     "logout": "Logout"
   },
+  "privacy": {
+    "hide_emails": "Hide emails",
+    "show_emails": "Show emails",
+    "hint": "Mask email addresses across the panel, e.g. before taking a screenshot"
+  },
   "connection": {
     "status": "Connection Status:"
   },
@@ -1356,9 +1361,6 @@
     "model_restricted": "No {{model}}",
     "model_restricted_plan_hint": "{{model}} isn't included in this account's plan",
     "model_restricted_reported_hint": "The provider reports {{model}} as unavailable for this account",
-    "privacy_hide_emails": "Hide emails",
-    "privacy_show_emails": "Show emails",
-    "privacy_hint": "Mask email addresses in credential names, e.g. before taking a screenshot",
     "row_renews": "renews {{date}}",
     "row_available": "available"
   },

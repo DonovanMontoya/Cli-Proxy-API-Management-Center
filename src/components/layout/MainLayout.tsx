@@ -30,6 +30,8 @@ import {
   IconSidebarStore,
   IconSidebarSystem,
   IconChevronDown,
+  IconEye,
+  IconEyeOff,
 } from '@/components/ui/icons';
 import { INLINE_LOGO_JPEG } from '@/assets/logoInline';
 import {
@@ -37,6 +39,7 @@ import {
   useConfigStore,
   useLanguageStore,
   useNotificationStore,
+  usePrivacyStore,
   useThemeStore,
 } from '@/stores';
 import { AUTH_FILES_CHANGED_EVENT } from '@/features/authFiles/authFilesEvents';
@@ -322,6 +325,8 @@ export function MainLayout() {
 
   const theme = useThemeStore((state) => state.theme);
   const setTheme = useThemeStore((state) => state.setTheme);
+  const hideEmails = usePrivacyStore((state) => state.hideEmails);
+  const toggleHideEmails = usePrivacyStore((state) => state.toggleHideEmails);
   const language = useLanguageStore((state) => state.language);
   const setLanguage = useLanguageStore((state) => state.setLanguage);
 
@@ -1023,6 +1028,20 @@ export function MainLayout() {
             title={t('header.refresh_all')}
           >
             {headerIcons.refresh}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleHideEmails}
+            title={hideEmails ? t('privacy.show_emails') : t('privacy.hide_emails')}
+            aria-label={t('privacy.hide_emails')}
+            aria-pressed={hideEmails}
+          >
+            {hideEmails ? (
+              <IconEyeOff size={16} aria-hidden="true" />
+            ) : (
+              <IconEye size={16} aria-hidden="true" />
+            )}
           </Button>
           <div className={`language-menu ${languageMenuOpen ? 'open' : ''}`} ref={languageMenuRef}>
             <Button

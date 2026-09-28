@@ -92,6 +92,11 @@
     "refresh_all": "全部重新整理",
     "logout": "登出"
   },
+  "privacy": {
+    "hide_emails": "隱藏信箱",
+    "show_emails": "顯示信箱",
+    "hint": "在整個面板中遮蔽電子郵件地址，方便截圖分享"
+  },
   "connection": {
     "status": "連線狀態:"
   },
@@ -1379,9 +1384,6 @@
     "model_restricted": "不可用 {{model}}",
     "model_restricted_plan_hint": "目前帳號方案不包含 {{model}}",
     "model_restricted_reported_hint": "供應商回報此帳號無法使用 {{model}}",
-    "privacy_hide_emails": "隱藏信箱",
-    "privacy_show_emails": "顯示信箱",
-    "privacy_hint": "遮蔽憑證名稱中的電子郵件地址，方便截圖分享",
     "row_renews": "{{date}} 續訂",
     "row_available": "可用"
   },

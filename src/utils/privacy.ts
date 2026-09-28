@@ -1,6 +1,6 @@
 /**
- * Privacy mode for the quota page: masks email addresses embedded in
- * credential names so the page can be screenshotted or shared.
+ * Privacy mode: masks email addresses embedded in credential names, account
+ * fields and log lines so any page can be screenshotted or shared.
  *
  * `claude-sam.lee@example.dev.json` → `claude-s•••@e•••.dev.json`
  * `codex-sam@gmail.com-plus.json`   → `codex-s•••@g•••.com-plus.json`
@@ -32,23 +32,14 @@ export function maskEmails(value: string): string {
   );
 }
 
-const PRIVACY_STORAGE_KEY = 'quotaPage.privacy';
+/** Key used when privacy mode was a quota-page-only setting; read once to migrate. */
+const LEGACY_PRIVACY_STORAGE_KEY = 'quotaPage.privacy';
 
-/** Persisted across sessions: a screenshot habit shouldn't need re-enabling every visit. */
-export const readPrivacyMode = (): boolean => {
+export const readLegacyPrivacyMode = (): boolean => {
   if (typeof window === 'undefined') return false;
   try {
-    return window.localStorage.getItem(PRIVACY_STORAGE_KEY) === '1';
+    return window.localStorage.getItem(LEGACY_PRIVACY_STORAGE_KEY) === '1';
   } catch {
     return false;
-  }
-};
-
-export const writePrivacyMode = (enabled: boolean) => {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(PRIVACY_STORAGE_KEY, enabled ? '1' : '0');
-  } catch {
-    // ignore
   }
 };
