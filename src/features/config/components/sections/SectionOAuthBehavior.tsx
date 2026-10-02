@@ -107,6 +107,15 @@ export function SectionOAuthBehavior({
                 error={getValidationMessage(t, validationErrors?.codexStreamBootstrapTimeout)}
               />
             </FieldAnchor>
+            <FieldAnchor fieldId="codexEnableApplyPatch">
+              <ToggleRow
+                title={t('config_management.visual.additions.codexEnableApplyPatch.label')}
+                description={t('config_management.visual.additions.codexEnableApplyPatch.hint')}
+                checked={values.codexEnableApplyPatch}
+                disabled={disabled}
+                onChange={(codexEnableApplyPatch) => onChange({ codexEnableApplyPatch })}
+              />
+            </FieldAnchor>
             <FieldAnchor fieldId="codexOptimizeMultiAgentV2">
               <ToggleRow
                 title={t('config_management.visual.additions.codexOptimizeMultiAgentV2.label')}

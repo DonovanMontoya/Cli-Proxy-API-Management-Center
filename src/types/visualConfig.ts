@@ -139,6 +139,7 @@ export type VisualConfigValues = {
   codexModelLevelCooling: boolean;
   codexStreamBootstrapBuffering: boolean;
   codexStreamBootstrapTimeout: string;
+  codexEnableApplyPatch: boolean;
   codexOptimizeMultiAgentV2: boolean;
   codexOrphanDelegationCompatibility: boolean;
   codexResponseSteering: boolean;
@@ -243,6 +244,7 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
   codexModelLevelCooling: false,
   codexStreamBootstrapBuffering: false,
   codexStreamBootstrapTimeout: '',
+  codexEnableApplyPatch: false,
   codexOptimizeMultiAgentV2: false,
   codexOrphanDelegationCompatibility: false,
   codexResponseSteering: false,

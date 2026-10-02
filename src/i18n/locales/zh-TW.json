@@ -1217,6 +1217,10 @@
           "label": "串流啟動緩衝逾時",
           "hint": "可選的緩衝時間上限，例如 20s。預設 0，表示不限制時間，但仍受影格數與位元組數預算限制。僅在收到上游影格時檢查，並非所有網路停滯情況的硬性截止時間；回應標頭仍可能等待轉換後的輸出。"
         },
+        "codexEnableApplyPatch": {
+          "label": "公布 apply_patch",
+          "hint": "讓 Codex 用戶端在模型目錄中看到自由格式的 apply_patch 工具。關閉時會清除 apply_patch_tool_type；開啟時僅宣告所有路由執行器都支援的模型。預設關閉。"
+        },
         "codexOptimizeMultiAgentV2": {
           "label": "多代理 v2 最佳化",
           "hint": "最佳化官方 Codex 多代理請求：更新 spawn_agent 模型資訊、移除訊息參數加密、正規化 agent_message 內容，並為非 Codex 協定轉換為使用者訊息。預設關閉。"

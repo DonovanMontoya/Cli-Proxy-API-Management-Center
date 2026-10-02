@@ -14,6 +14,7 @@ const addedFieldIds = [
   'codexModelLevelCooling',
   'codexStreamBootstrapBuffering',
   'codexStreamBootstrapTimeout',
+  'codexEnableApplyPatch',
   'codexOptimizeMultiAgentV2',
   'codexOrphanDelegationCompatibility',
   'codexResponseSteering',

@@ -1193,6 +1193,10 @@
           "label": "Stream bootstrap timeout",
           "hint": "Optional buffering time limit, e.g. 20s. Default: 0 (unlimited time; frame and byte budgets still apply). Checked as upstream frames arrive; not a hard deadline for every network stall. Headers may still wait for translated output."
         },
+        "codexEnableApplyPatch": {
+          "label": "Advertise apply_patch",
+          "hint": "Let Codex clients see the freeform apply_patch tool in the model catalog. When off, apply_patch_tool_type is cleared. When on, only models supported by every routing executor advertise it. Disabled by default."
+        },
         "codexOptimizeMultiAgentV2": {
           "label": "Optimize multi-agent v2",
           "hint": "Optimize official Codex multi-agent requests: refresh spawn_agent model details, remove message parameter encryption, normalize agent_message content, and convert it to user messages for non-Codex protocols. Disabled by default."

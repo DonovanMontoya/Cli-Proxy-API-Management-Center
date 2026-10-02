@@ -8,7 +8,9 @@ import type {
 import { assertConfigListsUnchanged } from '@/services/api/configPatch';
 import { readConfigBoolean } from './visualConfigBoolean';
 
-// Source: backend config_v8.go/config_types.go; provider paths are OAuth-only.
+// Source: backend config_v8.go/config_types.go. `path` is the canonical v8 path; `legacy` lists
+// historical spellings that are read when the canonical key is absent (the backend gives the
+// canonical path priority by presence, so writes always go to `path`).
 export const ADDITION_FIELDS = [
   {
     key: 'routingSessionAffinitySubagents',
@@ -32,57 +34,77 @@ export const ADDITION_FIELDS = [
   },
   {
     key: 'claudeHeaderTimezone',
-    path: 'oauth.providers.claude.header-defaults.timezone'.split('.'),
+    path: 'upstream.claude.header-defaults.timezone'.split('.'),
+    legacy: ['oauth.providers.claude.header-defaults.timezone'.split('.')],
     kind: 'string',
   },
   {
     key: 'claudeModelLevelCooling',
-    path: 'oauth.providers.claude.model-level-cooling'.split('.'),
+    path: 'upstream.claude.model-level-cooling'.split('.'),
+    legacy: ['oauth.providers.claude.model-level-cooling'.split('.')],
     kind: 'boolean',
   },
   {
     key: 'claudeDisableCloakMode',
-    path: 'oauth.providers.claude.disable-claude-cloak-mode'.split('.'),
+    path: 'upstream.claude.disable-claude-cloak-mode'.split('.'),
+    legacy: ['oauth.providers.claude.disable-claude-cloak-mode'.split('.')],
     kind: 'boolean',
   },
   {
     key: 'claudeCodeDisableCloakingModelList',
-    path: 'oauth.providers.claude.claude-code.disable-cloaking-model-list'.split('.'),
+    path: 'upstream.claude.disable-cloaking-model-list'.split('.'),
+    legacy: ['oauth.providers.claude.claude-code.disable-cloaking-model-list'.split('.')],
     kind: 'boolean',
   },
   {
     key: 'codexDisableCloaking',
-    path: 'oauth.providers.codex.disable-codex-cloaking'.split('.'),
+    path: 'upstream.codex.disable-codex-cloaking'.split('.'),
+    legacy: ['oauth.providers.codex.disable-codex-cloaking'.split('.')],
     kind: 'boolean',
   },
   {
     key: 'codexModelLevelCooling',
-    path: 'oauth.providers.codex.model-level-cooling'.split('.'),
+    path: 'upstream.codex.model-level-cooling'.split('.'),
+    legacy: ['oauth.providers.codex.model-level-cooling'.split('.')],
     kind: 'boolean',
   },
   {
     key: 'codexStreamBootstrapBuffering',
-    path: 'oauth.providers.codex.stream-bootstrap-buffering'.split('.'),
+    path: 'upstream.codex.stream-bootstrap-buffering'.split('.'),
+    legacy: ['oauth.providers.codex.stream-bootstrap-buffering'.split('.')],
     kind: 'boolean',
   },
   {
     key: 'codexStreamBootstrapTimeout',
-    path: 'oauth.providers.codex.stream-bootstrap-timeout'.split('.'),
+    path: 'upstream.codex.stream-bootstrap-timeout'.split('.'),
+    legacy: ['oauth.providers.codex.stream-bootstrap-timeout'.split('.')],
     kind: 'string',
   },
   {
+    key: 'codexEnableApplyPatch',
+    path: 'client.codex.enable-apply-patch'.split('.'),
+    kind: 'boolean',
+  },
+  {
     key: 'codexOptimizeMultiAgentV2',
-    path: 'oauth.providers.codex.optimize-multi-agent-v2'.split('.'),
+    path: 'client.codex.optimize-multi-agent-v2'.split('.'),
+    legacy: [
+      'oauth.providers.codex.optimize-multi-agent-v2'.split('.'),
+      'providers.codex.optimize-multi-agent-v2'.split('.'),
+      'codex.optimize-multi-agent-v2'.split('.'),
+    ],
     kind: 'boolean',
   },
   {
     key: 'codexOrphanDelegationCompatibility',
-    path: 'oauth.providers.codex.orphan-delegation-compatibility'.split('.'),
+    path: 'upstream.codex.orphan-delegation-compatibility'.split('.'),
+    legacy: ['oauth.providers.codex.orphan-delegation-compatibility'.split('.')],
     kind: 'boolean',
   },
   {
     key: 'codexResponseSteering',
-    path: 'oauth.providers.codex.response-steering'.split('.'),
+    path: 'upstream.codex.response-steering'.split('.'),
+    legacy: ['oauth.providers.codex.response-steering'.split('.')],
     kind: 'boolean',
   },
   {
@@ -102,7 +124,8 @@ export const ADDITION_FIELDS = [
   },
   {
     key: 'xaiInjectXSearch',
-    path: 'oauth.providers.xai.inject-x-search'.split('.'),
+    path: 'upstream.xai.inject-x-search'.split('.'),
+    legacy: ['oauth.providers.xai.inject-x-search'.split('.')],
     kind: 'boolean',
   },
   {
@@ -139,13 +162,20 @@ export const ADDITION_FIELDS = [
 export const ICE_KEY = 'codexLiveMediaRelayICEServers';
 export const ICE_PATH = ['oauth', 'providers', 'codex', 'live-media-relay', 'ice-servers'];
 type Doc = ReturnType<typeof parseDocument>;
+type AdditionField = { path: string[]; legacy?: readonly (readonly string[])[] };
+function readAdditionRaw(doc: Doc, { path, legacy }: AdditionField) {
+  if (doc.hasIn(path)) return doc.getIn(path);
+  const alias = legacy?.find((legacyPath) => doc.hasIn([...legacyPath]));
+  return alias ? doc.getIn([...alias]) : undefined;
+}
 export function readVisualAdditions(doc: Doc) {
   const values = {} as Pick<
     VisualConfigValues,
     (typeof ADDITION_FIELDS)[number]['key'] | typeof ICE_KEY
   >;
-  for (const { key, path, kind } of ADDITION_FIELDS) {
-    const raw = doc.getIn(path);
+  for (const field of ADDITION_FIELDS) {
+    const { key, kind } = field;
+    const raw = readAdditionRaw(doc, field);
     Object.assign(values, {
       [key]:
         kind === 'boolean' ? readConfigBoolean(raw, DEFAULT_VISUAL_VALUES[key]) : String(raw ?? ''),

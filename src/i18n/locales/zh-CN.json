@@ -1191,6 +1191,10 @@
           "label": "流启动缓冲超时",
           "hint": "可选的缓冲时间上限，例如 20s。默认 0，表示不限制时间，但仍受帧数和字节数预算限制。仅在收到上游帧时检查，并非所有网络卡死场景的硬截止时间；响应头仍可能等待转换后的输出。"
         },
+        "codexEnableApplyPatch": {
+          "label": "公布 apply_patch",
+          "hint": "让 Codex 客户端在模型目录中看到自由格式的 apply_patch 工具。关闭时会清除 apply_patch_tool_type；开启时仅声明所有路由执行器都支持的模型。默认关闭。"
+        },
         "codexOptimizeMultiAgentV2": {
           "label": "多代理 v2 优化",
           "hint": "优化官方 Codex 多代理请求：更新 spawn_agent 模型信息、移除消息参数加密、规范化 agent_message 内容，并为非 Codex 协议转换为用户消息。默认关闭。"
