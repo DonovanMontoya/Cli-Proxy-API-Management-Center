@@ -1,4 +1,5 @@
 import { useState, type CSSProperties } from 'react';
+import { getAuthFileRefreshKey } from '@/features/authFiles/manualRefresh';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -45,6 +46,7 @@ export type AuthFileCardProps = {
   deleting: string | null;
   statusUpdating: Record<string, boolean>;
   manualRefreshing: Record<string, boolean>;
+  cooldownResetting: Record<string, boolean>;
   quotaFilterType: AuthFileQuotaFilter;
   statusBarCache: Map<string, AuthFileStatusBarData>;
   /** 首屏一次性级联入场的延迟；null/undefined 表示不做入场动画。 */
@@ -52,6 +54,7 @@ export type AuthFileCardProps = {
   onShowModels: (file: AuthFileItem) => void;
   onDownload: (name: string) => void;
   onManualRefresh: (file: AuthFileItem) => void;
+  onCooldownReset: (file: AuthFileItem) => void;
   onOpenPrefixProxyEditor: (file: AuthFileItem) => void;
   onDelete: (name: string) => void;
   onToggleStatus: (file: AuthFileItem, enabled: boolean) => void;
@@ -69,12 +72,14 @@ export function AuthFileCard(props: AuthFileCardProps) {
     deleting,
     statusUpdating,
     manualRefreshing,
+    cooldownResetting,
     quotaFilterType,
     statusBarCache,
     entranceDelayMs,
     onShowModels,
     onDownload,
     onManualRefresh,
+    onCooldownReset,
     onOpenPrefixProxyEditor,
     onDelete,
     onToggleStatus,
@@ -86,7 +91,7 @@ export function AuthFileCard(props: AuthFileCardProps) {
   const isAistudio = providerKey === 'aistudio';
   const showModelsButton = !isRuntimeOnly || isAistudio;
   const showManualRefreshButton = !isRuntimeOnly && supportsAuthFileManualRefresh(providerKey);
-  const isManualRefreshing = manualRefreshing[file.name] === true;
+  const isManualRefreshing = manualRefreshing[getAuthFileRefreshKey(file)] === true;
   const typeLabel = getTypeLabel(t, providerKey);
   const typeColor = getTypeColor(providerKey, resolvedTheme);
 
@@ -96,6 +101,7 @@ export function AuthFileCard(props: AuthFileCardProps) {
   const successCount = file.successCount ?? 0;
   const failureCount = file.failureCount ?? 0;
   const authIndexKey = typeof file.authIndex === 'string' ? file.authIndex : null;
+  const isCooldownResetting = Boolean(authIndexKey && cooldownResetting[authIndexKey]);
   const statusData =
     (authIndexKey && statusBarCache.get(authIndexKey)) ||
     statusBarDataFromRecentRequests(file.recentRequests ?? []);
@@ -117,6 +123,7 @@ export function AuthFileCard(props: AuthFileCardProps) {
     styles.card,
     compact ? styles.cardCompact : '',
     selected ? styles.cardSelected : '',
+    file.disabled === true ? styles.cardDisabled : '',
     mountEntranceDelayMs != null ? styles.cardEnter : '',
   ]
     .filter(Boolean)
@@ -180,7 +187,16 @@ export function AuthFileCard(props: AuthFileCardProps) {
         </div>
       )}
 
-      <AuthFileCooldownSection snapshot={file.cooldownSnapshot} />
+      <AuthFileCooldownSection
+        snapshot={file.cooldownSnapshot}
+        resetting={isCooldownResetting}
+        resetDisabled={
+          disableControls ||
+          statusUpdating[getAuthFileRefreshKey(file)] === true ||
+          isManualRefreshing
+        }
+        onReset={authIndexKey ? () => onCooldownReset(file) : undefined}
+      />
 
       <div className={styles.health}>
         <div className={styles.healthHead}>
@@ -263,7 +279,7 @@ export function AuthFileCard(props: AuthFileCardProps) {
                   disabled={
                     disableControls ||
                     file.disabled ||
-                    statusUpdating[file.name] === true ||
+                    statusUpdating[getAuthFileRefreshKey(file)] === true ||
                     isManualRefreshing
                   }
                 >
@@ -309,7 +325,11 @@ export function AuthFileCard(props: AuthFileCardProps) {
             <ToggleSwitch
               ariaLabel={t('auth_files.card_toggle', { name: displayFileName })}
               checked={!file.disabled}
-              disabled={disableControls || statusUpdating[file.name] === true || isManualRefreshing}
+              disabled={
+                disableControls ||
+                statusUpdating[getAuthFileRefreshKey(file)] === true ||
+                isManualRefreshing
+              }
               onChange={(value) => onToggleStatus(file, value)}
             />
           </div>
