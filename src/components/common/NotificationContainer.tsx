@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useMaskEmails, useNotificationStore } from '@/stores';
+import { useMaskPii, useNotificationStore } from '@/stores';
 import { IconAlertTriangle, IconCheckCircle2, IconInfo, IconX } from '@/components/ui/icons';
 import { NOTIFICATION_DURATION_MS } from '@/utils/constants';
 import type { Notification } from '@/types';
@@ -32,7 +32,7 @@ function NotificationCard({
 }) {
   const { t } = useTranslation();
   const removeNotification = useNotificationStore((state) => state.removeNotification);
-  const mask = useMaskEmails();
+  const mask = useMaskPii();
   const timerRef = useRef<ReturnType<typeof createNotificationTimer> | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const { id, type, message, duration = NOTIFICATION_DURATION_MS, isExiting } = notification;

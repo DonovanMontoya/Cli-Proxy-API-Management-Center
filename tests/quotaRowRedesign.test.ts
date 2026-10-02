@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { TFunction } from 'i18next';
-import { maskEmails } from '@/utils/privacy';
+import { maskEmails, maskPii } from '@/utils/privacy';
 import { restrictedModelsFor } from '@/features/quota/modelAccess';
 import { buildProviderSummaries } from '@/features/quota/summaryModel';
 import { buildClaudeQuotaWindows } from '@/features/quota/providers/claude/data';
@@ -141,5 +141,27 @@ describe('provider summary rollup', () => {
     expect(claude.windows[1].nextResetMs).toBe(now + 2 * hour);
 
     expect(codex).toMatchObject({ type: 'codex', credentialCount: 1, loadedCount: 0, windows: [] });
+  });
+});
+
+describe('privacy mode personal info masking', () => {
+  test('masks the account hash and email in a credential filename', () => {
+    expect(maskPii('claude-1215c1a7-sam.lee@gmail.com.json')).toBe(
+      'claude-1•••-s•••@g•••.com.json'
+    );
+    expect(maskPii('codex-a83ec262-sam@gmail.com-prolite.json')).toBe(
+      'codex-a•••-s•••@g•••.com-prolite.json'
+    );
+  });
+
+  test('masks UUIDs, tokens and non-loopback IPs', () => {
+    expect(maskPii('id 123e4567-e89b-12d3-a456-426614174000')).toBe('id 123e•••');
+    expect(maskPii('key sk-ant-oat01-abcdefghijklmnop')).toBe('key sk-ant-•••');
+    expect(maskPii('from 203.0.113.9 and 127.0.0.1')).toBe('from 203.•••.•••.••• and 127.0.0.1');
+  });
+
+  test('leaves ordinary text untouched', () => {
+    expect(maskPii('gemini-2.5-pro quota 80%')).toBe('gemini-2.5-pro quota 80%');
+    expect(maskPii('claude-sonnet-5-5')).toBe('claude-sonnet-5-5');
   });
 });

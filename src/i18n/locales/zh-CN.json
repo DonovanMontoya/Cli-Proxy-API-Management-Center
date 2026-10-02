@@ -93,9 +93,9 @@
     "logout": "登出"
   },
   "privacy": {
-    "hide_emails": "隐藏邮箱",
-    "show_emails": "显示邮箱",
-    "hint": "在整个面板中遮蔽邮箱地址，便于截图分享"
+    "hide": "隐藏个人信息",
+    "show": "显示个人信息",
+    "hint": "在整个面板中隐藏邮箱、账号 ID、令牌和 IP 地址，例如截图前使用"
   },
   "connection": {
     "status": "连接状态:"

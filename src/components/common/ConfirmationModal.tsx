@@ -1,14 +1,14 @@
 import { useTranslation } from 'react-i18next';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { useMaskEmails, useNotificationStore } from '@/stores';
+import { useMaskPii, useNotificationStore } from '@/stores';
 
 export function ConfirmationModal() {
   const { t } = useTranslation();
   const confirmation = useNotificationStore((state) => state.confirmation);
   const hideConfirmation = useNotificationStore((state) => state.hideConfirmation);
   const setConfirmationLoading = useNotificationStore((state) => state.setConfirmationLoading);
-  const mask = useMaskEmails();
+  const mask = useMaskPii();
 
   const { isOpen, isLoading, options } = confirmation;
 

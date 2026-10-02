@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/icons';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { useAuthStore, useConfigStore, useMaskEmails, useNotificationStore } from '@/stores';
+import { useAuthStore, useConfigStore, useMaskPii, useNotificationStore } from '@/stores';
 import { logsApi, type ErrorLogFile, type LogsQuery } from '@/services/api/logs';
 import { copyToClipboard } from '@/utils/clipboard';
 import { getErrorMessage } from '@/utils/helpers';
@@ -137,7 +137,7 @@ type TabType = 'logs' | 'errors';
 export function LogsPage() {
   const { t } = useTranslation();
   const { showNotification, showConfirmation } = useNotificationStore();
-  const mask = useMaskEmails();
+  const mask = useMaskPii();
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
   const apiBase = useAuthStore((state) => state.apiBase);
   const managementKey = useAuthStore((state) => state.managementKey);

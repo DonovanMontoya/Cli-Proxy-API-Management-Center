@@ -21,7 +21,7 @@ import { useNow } from '@/hooks/useNow';
 import { useRevealGroup } from '@/hooks/motion';
 import {
   useAuthStore,
-  useMaskEmails,
+  useMaskPii,
   usePrivacyStore,
   useQuotaStore,
   useThemeStore,
@@ -80,10 +80,10 @@ export function QuotaPage() {
   );
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const privacyMode = usePrivacyStore((state) => state.hideEmails);
-  const togglePrivacyMode = usePrivacyStore((state) => state.toggleHideEmails);
+  const privacyMode = usePrivacyStore((state) => state.hidePii);
+  const togglePrivacyMode = usePrivacyStore((state) => state.toggleHidePii);
   /** Rows and timeline lanes share one label; privacy mode masks emails in both. */
-  const displayNameFor = useMaskEmails();
+  const displayNameFor = useMaskPii();
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Header + tabs entrance cascade (title → meta → action → tabs, 70ms apart)
   const revealRef = useRevealGroup<HTMLDivElement>();
@@ -433,7 +433,7 @@ export function QuotaPage() {
             ) : (
               <IconEye size={15} aria-hidden="true" />
             )}
-            {privacyMode ? t('privacy.show_emails') : t('privacy.hide_emails')}
+            {privacyMode ? t('privacy.show') : t('privacy.hide')}
           </button>
         </div>
 

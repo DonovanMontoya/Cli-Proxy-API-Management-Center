@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { AuthFileModelItem } from '@/features/authFiles/constants';
 import { isModelExcluded } from '@/features/authFiles/constants';
-import { useMaskEmails } from '@/stores';
+import { useMaskPii } from '@/stores';
 import styles from './AuthFileModelsModal.module.scss';
 
 export type AuthFileModelsModalProps = {
@@ -22,7 +22,7 @@ export type AuthFileModelsModalProps = {
 export function AuthFileModelsModal(props: AuthFileModelsModalProps) {
   const { t } = useTranslation();
   const { open, fileName, fileType, loading, error, models, excluded, onClose, onCopyText } = props;
-  const mask = useMaskEmails();
+  const mask = useMaskPii();
 
   return (
     <Modal

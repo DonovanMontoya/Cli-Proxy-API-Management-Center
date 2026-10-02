@@ -17,7 +17,7 @@ import {
   supportsAuthFileWebsockets,
 } from '@/features/authFiles/constants';
 import { MAX_CREDENTIAL_WEIGHT } from '@/utils/credentialWeight';
-import { useMaskEmails } from '@/stores';
+import { useMaskPii } from '@/stores';
 import { AuthFileExcludedModelsField } from './AuthFileExcludedModelsField';
 import styles from './AuthFileDetailsSheet.module.scss';
 
@@ -97,7 +97,7 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
       return text;
     }
   };
-  const mask = useMaskEmails();
+  const mask = useMaskPii();
   const previewText = formatJsonText(updatedText);
   const invalidContentPreview = editor?.invalidContentPreview ?? '';
   const fileInfoText = editor?.fileInfoText ?? '';

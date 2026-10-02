@@ -325,8 +325,8 @@ export function MainLayout() {
 
   const theme = useThemeStore((state) => state.theme);
   const setTheme = useThemeStore((state) => state.setTheme);
-  const hideEmails = usePrivacyStore((state) => state.hideEmails);
-  const toggleHideEmails = usePrivacyStore((state) => state.toggleHideEmails);
+  const hidePii = usePrivacyStore((state) => state.hidePii);
+  const toggleHidePii = usePrivacyStore((state) => state.toggleHidePii);
   const language = useLanguageStore((state) => state.language);
   const setLanguage = useLanguageStore((state) => state.setLanguage);
 
@@ -1032,12 +1032,12 @@ export function MainLayout() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={toggleHideEmails}
-            title={hideEmails ? t('privacy.show_emails') : t('privacy.hide_emails')}
-            aria-label={t('privacy.hide_emails')}
-            aria-pressed={hideEmails}
+            onClick={toggleHidePii}
+            title={hidePii ? t('privacy.show') : t('privacy.hide')}
+            aria-label={t('privacy.hide')}
+            aria-pressed={hidePii}
           >
-            {hideEmails ? (
+            {hidePii ? (
               <IconEyeOff size={16} aria-hidden="true" />
             ) : (
               <IconEye size={16} aria-hidden="true" />

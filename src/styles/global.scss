@@ -45,3 +45,8 @@ body.modal-open .content {
   }
 }
 
+
+/* Privacy mode: inputs and code editors can't be text-masked, so obscure them instead. */
+[data-pii-blur] {
+  filter: blur(6px);
+}

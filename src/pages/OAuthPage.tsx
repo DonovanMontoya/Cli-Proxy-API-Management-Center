@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { IconPlug } from '@/components/ui/icons';
-import { useAuthStore, useMaskEmails, useNotificationStore, useThemeStore } from '@/stores';
+import { useAuthStore, useMaskPii, useNotificationStore, useThemeStore } from '@/stores';
 import { oauthApi, pluginsApi, type BuiltInOAuthProvider } from '@/services/api';
 import { vertexApi, type VertexImportResponse } from '@/services/api/vertex';
 import { copyToClipboard } from '@/utils/clipboard';
@@ -270,7 +270,7 @@ const resolveCallbackUrl = (provider: string, input: string, state?: string): st
 
 export function OAuthPage() {
   const { t } = useTranslation();
-  const mask = useMaskEmails();
+  const mask = useMaskPii();
   const navigate = useNavigate();
   const apiBase = useAuthStore((state) => state.apiBase);
   const { showNotification } = useNotificationStore();

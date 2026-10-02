@@ -5,7 +5,8 @@ import { NotificationContainer } from '@/components/common/NotificationContainer
 import { ConfirmationModal } from '@/components/common/ConfirmationModal';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ProtectedRoute } from '@/router/ProtectedRoute';
-import { useLanguageStore, useThemeStore } from '@/stores';
+import { useLanguageStore, usePrivacyStore, useThemeStore } from '@/stores';
+import { startPiiMasking } from '@/utils/privacyDom';
 
 function RootShell() {
   return (
@@ -48,6 +49,13 @@ function App() {
     setLanguage(language);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 仅用于首屏同步 i18n 语言
+
+  const hidePii = usePrivacyStore((state) => state.hidePii);
+  // Sweeps whatever the per-component masks miss (any page, dialog or tooltip).
+  useEffect(() => {
+    if (!hidePii) return;
+    return startPiiMasking();
+  }, [hidePii]);
 
   useEffect(() => {
     document.documentElement.lang = language;

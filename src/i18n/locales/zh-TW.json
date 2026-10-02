@@ -93,9 +93,9 @@
     "logout": "登出"
   },
   "privacy": {
-    "hide_emails": "隱藏信箱",
-    "show_emails": "顯示信箱",
-    "hint": "在整個面板中遮蔽電子郵件地址，方便截圖分享"
+    "hide": "隱藏個人資訊",
+    "show": "顯示個人資訊",
+    "hint": "在整個面板中隱藏信箱、帳號 ID、權杖和 IP 位址，例如截圖前使用"
   },
   "connection": {
     "status": "連線狀態:"

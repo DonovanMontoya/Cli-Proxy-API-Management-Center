@@ -93,9 +93,9 @@
     "logout": "Logout"
   },
   "privacy": {
-    "hide_emails": "Hide emails",
-    "show_emails": "Show emails",
-    "hint": "Mask email addresses across the panel, e.g. before taking a screenshot"
+    "hide": "Hide personal info",
+    "show": "Show personal info",
+    "hint": "Mask emails, account IDs, tokens and IP addresses across the panel, e.g. before taking a screenshot"
   },
   "connection": {
     "status": "Connection Status:"
