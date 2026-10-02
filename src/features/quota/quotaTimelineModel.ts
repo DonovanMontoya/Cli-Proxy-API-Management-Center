@@ -382,23 +382,23 @@ export function buildTimelineLane(input: TimelineLaneInput): TimelineLane {
     const chosen = preferredCodexWindow ?? pickLaneWindow(windows, maxPeriodHours);
     if (!chosen) return empty;
 
-    const resetCredits =
-      provider === 'codex'
-        ? ((quota as { rateLimitResetCredits?: ResetCreditLike[] }).rateLimitResetCredits ?? [])
-            .filter((credit) => credit.status === 'available')
-            .map((credit): TimelineResetCredit | null => {
-              const expiresAtMs = new Date(credit.expiresAt ?? '').getTime();
-              if (!Number.isFinite(expiresAtMs)) return null;
+    // Codex manual resets and Claude banked resets share this shape.
+    const resetCredits = (
+      (quota as { rateLimitResetCredits?: ResetCreditLike[] }).rateLimitResetCredits ?? []
+    )
+      .filter((credit) => credit.status === 'available')
+      .map((credit): TimelineResetCredit | null => {
+        const expiresAtMs = new Date(credit.expiresAt ?? '').getTime();
+        if (!Number.isFinite(expiresAtMs)) return null;
 
-              const grantedAtMs = new Date(credit.grantedAt ?? '').getTime();
-              return {
-                id: credit.id ?? '',
-                grantedAtMs: Number.isFinite(grantedAtMs) ? grantedAtMs : null,
-                expiresAtMs,
-              };
-            })
-            .filter((credit): credit is TimelineResetCredit => credit !== null)
-        : [];
+        const grantedAtMs = new Date(credit.grantedAt ?? '').getTime();
+        return {
+          id: credit.id ?? '',
+          grantedAtMs: Number.isFinite(grantedAtMs) ? grantedAtMs : null,
+          expiresAtMs,
+        };
+      })
+      .filter((credit): credit is TimelineResetCredit => credit !== null);
 
     return {
       ...empty,

@@ -501,7 +501,17 @@
     "plan_max": "Max",
     "plan_max5": "Max 5x",
     "plan_max20": "Max 20x",
-    "plan_team": "團隊版"
+    "plan_team": "團隊版",
+    "reset_credits_label": "已存重置次數",
+    "reset_credits_expiry_label": "已存重置過期時間（{{timezone}}）",
+    "reset_credit_number": "第 {{index}} 次",
+    "reset_credits_expiry_unavailable": "暫無過期時間",
+    "reset_button": "使用已存重置",
+    "reset_confirm_title": "使用 Claude 已存重置",
+    "reset_confirm_message": "將消耗 1 次已存重置來重置「{{name}}」的 Claude 用量限制，此操作無法復原。是否繼續？",
+    "reset_confirm_button": "確認使用",
+    "reset_success": "已重置「{{name}}」的 Claude 用量限制",
+    "reset_failed": "重置「{{name}}」的 Claude 用量限制失敗：{{message}}"
   },
   "codex_quota": {
     "title": "Codex 配額",

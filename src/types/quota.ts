@@ -134,6 +134,20 @@ export interface ClaudeUsagePayload {
   iguana_necktie?: ClaudeUsageWindow | null;
   limits?: ClaudeUsageLimit[] | null;
   extra_usage?: ClaudeExtraUsage | null;
+  /** Banked usage-limit resets; only present when requested with `?cedar_ember=1`. */
+  cedar_ember?: unknown;
+}
+
+/**
+ * One banked usage-limit reset grant. Shares the id/status/grantedAt/expiresAt
+ * shape of a Codex reset credit so the reset schedule and timeline read both.
+ */
+export interface ClaudeRateLimitResetCredit {
+  id: string;
+  status: string;
+  grantedAt: string;
+  expiresAt: string;
+  resetsLeft: number;
 }
 
 export interface ClaudeProfileResponse {
@@ -179,6 +193,9 @@ export interface ClaudeQuotaState {
   windows: ClaudeQuotaWindow[];
   extraUsage?: ClaudeExtraUsage | null;
   planType?: string | null;
+  /** Banked resets still unspent; null when the account has no grant. */
+  rateLimitResetCreditsAvailableCount?: number | null;
+  rateLimitResetCredits?: ClaudeRateLimitResetCredit[];
   error?: string;
   errorStatus?: number;
 }

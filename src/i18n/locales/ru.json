@@ -506,7 +506,17 @@
     "plan_max": "Max",
     "plan_max5": "Max 5x",
     "plan_max20": "Max 20x",
-    "plan_team": "Team"
+    "plan_team": "Team",
+    "reset_credits_label": "Сохранённые сбросы",
+    "reset_credits_expiry_label": "Срок действия сохранённых сбросов ({{timezone}})",
+    "reset_credit_number": "Сброс {{index}}",
+    "reset_credits_expiry_unavailable": "Срок действия недоступен",
+    "reset_button": "Использовать сохранённый сброс",
+    "reset_confirm_title": "Использовать сохранённый сброс Claude",
+    "reset_confirm_message": "Для сброса лимитов Claude для «{{name}}» будет использован 1 сохранённый сброс. Это действие нельзя отменить. Продолжить?",
+    "reset_confirm_button": "Использовать сброс",
+    "reset_success": "Лимиты Claude для «{{name}}» сброшены",
+    "reset_failed": "Не удалось сбросить лимиты Claude для «{{name}}»: {{message}}"
   },
   "codex_quota": {
     "title": "Квота Codex",

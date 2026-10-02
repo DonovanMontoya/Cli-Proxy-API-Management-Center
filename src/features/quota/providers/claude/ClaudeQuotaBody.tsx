@@ -1,15 +1,16 @@
 /**
- * Claude 额度渲染体：套餐/额外用量 chip 行 + 用量窗口水位条。
+ * Claude quota body: plan / extra usage / banked reset chips + usage window meters.
  */
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ClaudeQuotaState } from '@/types';
-import { buildResetDisplay } from '@/utils/quota';
+import { buildResetDisplay, formatInstantShort, parseIsoToMs } from '@/utils/quota';
+import { resolveTimeZoneLabel } from '@/utils/time/timezone';
 import { useNow } from '@/hooks/useNow';
 import { QuotaMeter } from '../../components/QuotaMeter';
 import { QuotaResetLabel } from '../../components/QuotaResetLabel';
-import { collectQuotaRowInstants, pickUrgentRowId } from '../../resetSchedule';
+import { collectQuotaRowInstants, pickUrgentRowId, resetCreditRowId } from '../../resetSchedule';
 import type { QuotaBodyProps } from '../../types';
 
 export function ClaudeQuotaBody({ quota, classes }: QuotaBodyProps<ClaudeQuotaState>) {
@@ -22,6 +23,8 @@ export function ClaudeQuotaBody({ quota, classes }: QuotaBodyProps<ClaudeQuotaSt
   const windows = quota.windows ?? [];
   const extraUsage = quota.extraUsage ?? null;
   const planType = quota.planType ?? null;
+  const resetCount = quota.rateLimitResetCreditsAvailableCount ?? null;
+  const resetCredits = quota.rateLimitResetCredits ?? [];
 
   return (
     <>
@@ -37,6 +40,51 @@ export function ClaudeQuotaBody({ quota, classes }: QuotaBodyProps<ClaudeQuotaSt
           <span className={classes.codexPlanValue}>
             {`$${(extraUsage.used_credits / 100).toFixed(2)} / $${(extraUsage.monthly_limit / 100).toFixed(2)}`}
           </span>
+        </div>
+      )}
+      {resetCount !== null && (
+        <div className={classes.codexPlan}>
+          <span className={classes.codexPlanLabel}>{t('claude_quota.reset_credits_label')}</span>
+          <span className={classes.codexPlanValue}>{resetCount.toString()}</span>
+        </div>
+      )}
+      {resetCredits.length > 0 && (
+        <div className={classes.codexResetCredits}>
+          <div className={classes.codexResetCreditsTitle}>
+            {t('claude_quota.reset_credits_expiry_label', { timezone: resolveTimeZoneLabel() })}
+          </div>
+          {resetCredits.map((credit, index) => {
+            const expiresAtMs = parseIsoToMs(credit.expiresAt);
+            const expiresDisplay = buildResetDisplay(
+              expiresAtMs === null ? credit.expiresAt : formatInstantShort(expiresAtMs),
+              expiresAtMs,
+              now,
+              i18n.resolvedLanguage
+            );
+            const rowId = resetCreditRowId(credit, index);
+            const soon = rowId === soonestRowId;
+            return (
+              <div
+                key={rowId}
+                className={
+                  soon
+                    ? `${classes.codexResetCreditRow} ${classes.codexResetCreditRowSoon}`
+                    : classes.codexResetCreditRow
+                }
+                title={soon ? t('quota_management.soonest_row_hint') : undefined}
+              >
+                <span className={classes.codexResetCreditLabel}>
+                  {t('claude_quota.reset_credit_number', { index: index + 1 })}
+                  {credit.resetsLeft > 1 && ` ×${credit.resetsLeft}`}
+                </span>
+                <span className={classes.codexResetCreditTime}>
+                  {expiresDisplay && (
+                    <QuotaResetLabel display={expiresDisplay} classes={classes} soon={soon} />
+                  )}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
       {windows.length === 0 ? (

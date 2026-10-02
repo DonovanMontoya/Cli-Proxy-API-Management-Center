@@ -116,8 +116,98 @@ function StatCell({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
-export function QuotaRowCells({ type, quota }: { type: QuotaProviderType; quota: unknown }) {
+interface ResetCreditLike {
+  id?: string;
+  expiresAt?: string;
+  resetsLeft?: number;
+}
+
+/** Codex manual resets and Claude banked resets: a count plus per-reset expiry. */
+function ResetCreditsCell({
+  prefix,
+  count,
+  credits,
+  error,
+  urgentRowId,
+  nowMs,
+}: {
+  prefix: 'codex_quota' | 'claude_quota';
+  count: number | null | undefined;
+  credits: ResetCreditLike[];
+  error?: string;
+  urgentRowId: string | null;
+  nowMs: number;
+}) {
   const { t, i18n } = useTranslation();
+
+  return (
+    <div className={styles.cell}>
+      <div className={styles.cellHead}>
+        <span className={styles.cellLabel}>{t(`${prefix}.reset_credits_label`)}</span>
+      </div>
+      {count === 0 && credits.length === 0 && !error ? (
+        <div className={styles.statValue}>
+          <strong>0</strong> {t('quota_management.row_available')}
+        </div>
+      ) : (
+        <details className={styles.resetDetails}>
+          <summary className={styles.resetSummary}>
+            <span className={styles.statValue}>
+              <strong>{count ?? (credits.length > 0 ? credits.length : '--')}</strong>{' '}
+              {t('quota_management.row_available')}
+            </span>
+            <IconInfo size={13} aria-hidden="true" />
+          </summary>
+          <div className={styles.resetPopover}>
+            <div className={styles.resetPopoverTitle}>
+              {t(`${prefix}.reset_credits_expiry_label`, {
+                timezone: resolveTimeZoneLabel(),
+              })}
+            </div>
+            {credits.map((credit, index) => {
+              const rowId = resetCreditRowId(credit, index);
+              const expiresAtMs = parseIsoToMs(credit.expiresAt);
+              const reset = buildResetDisplay(
+                expiresAtMs === null ? credit.expiresAt : formatInstantShort(expiresAtMs),
+                expiresAtMs,
+                nowMs,
+                i18n.resolvedLanguage
+              );
+              return (
+                <div key={rowId} className={styles.creditFoot}>
+                  <span className={styles.creditLabel}>
+                    {t(`${prefix}.reset_credit_number`, { index: index + 1 })}
+                    {(credit.resetsLeft ?? 1) > 1 && ` ×${credit.resetsLeft}`}
+                  </span>
+                  {reset && (
+                    <span
+                      className={rowId === urgentRowId ? styles.relativeSoon : styles.creditTime}
+                    >
+                      {reset.relative || reset.absolute}
+                    </span>
+                  )}
+                  {reset?.relative && <span className={styles.absolute}>{reset.absolute}</span>}
+                </div>
+              );
+            })}
+            {error ? (
+              <span className={styles.creditError}>
+                {t(`${prefix}.reset_credits_expiry_failed`, { message: error })}
+              </span>
+            ) : credits.length === 0 ? (
+              <span className={styles.resetUnavailable}>
+                {t(`${prefix}.reset_credits_expiry_unavailable`)}
+              </span>
+            ) : null}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
+
+export function QuotaRowCells({ type, quota }: { type: QuotaProviderType; quota: unknown }) {
+  const { t } = useTranslation();
   const now = useNow();
   const urgentRowId = useMemo(
     () => pickUrgentRowId(collectQuotaRowInstants(type, quota), now),
@@ -147,6 +237,15 @@ export function QuotaRowCells({ type, quota }: { type: QuotaProviderType; quota:
             value={`$${(extra.used_credits / 100).toFixed(2)} / $${(extra.monthly_limit / 100).toFixed(2)}`}
           />
         )}
+        {claude.rateLimitResetCreditsAvailableCount != null && (
+          <ResetCreditsCell
+            prefix="claude_quota"
+            count={claude.rateLimitResetCreditsAvailableCount}
+            credits={claude.rateLimitResetCredits ?? []}
+            urgentRowId={urgentRowId}
+            nowMs={now}
+          />
+        )}
       </>
     );
   }
@@ -161,71 +260,14 @@ export function QuotaRowCells({ type, quota }: { type: QuotaProviderType; quota:
         <WindowCell key={window.id} window={window} soon={window.id === urgentRowId} nowMs={now} />
       ))}
       {(resetCount != null || credits.length > 0 || codex.rateLimitResetCreditsError) && (
-        <div className={styles.cell}>
-          <div className={styles.cellHead}>
-            <span className={styles.cellLabel}>{t('codex_quota.reset_credits_label')}</span>
-          </div>
-          {resetCount === 0 && credits.length === 0 && !codex.rateLimitResetCreditsError ? (
-            <div className={styles.statValue}>
-              <strong>0</strong> {t('quota_management.row_available')}
-            </div>
-          ) : (
-            <details className={styles.resetDetails}>
-              <summary className={styles.resetSummary}>
-                <span className={styles.statValue}>
-                  <strong>{resetCount ?? (credits.length > 0 ? credits.length : '--')}</strong>{' '}
-                  {t('quota_management.row_available')}
-                </span>
-                <IconInfo size={13} aria-hidden="true" />
-              </summary>
-              <div className={styles.resetPopover}>
-                <div className={styles.resetPopoverTitle}>
-                  {t('codex_quota.reset_credits_expiry_label', {
-                    timezone: resolveTimeZoneLabel(),
-                  })}
-                </div>
-                {credits.map((credit, index) => {
-                  const rowId = resetCreditRowId(credit, index);
-                  const expiresAtMs = parseIsoToMs(credit.expiresAt);
-                  const reset = buildResetDisplay(
-                    expiresAtMs === null ? credit.expiresAt : formatInstantShort(expiresAtMs),
-                    expiresAtMs,
-                    now,
-                    i18n.resolvedLanguage
-                  );
-                  return (
-                    <div key={rowId} className={styles.creditFoot}>
-                      <span className={styles.creditLabel}>
-                        {t('codex_quota.reset_credit_number', { index: index + 1 })}
-                      </span>
-                      {reset && (
-                        <span
-                          className={
-                            rowId === urgentRowId ? styles.relativeSoon : styles.creditTime
-                          }
-                        >
-                          {reset.relative || reset.absolute}
-                        </span>
-                      )}
-                      {reset?.relative && <span className={styles.absolute}>{reset.absolute}</span>}
-                    </div>
-                  );
-                })}
-                {codex.rateLimitResetCreditsError ? (
-                  <span className={styles.creditError}>
-                    {t('codex_quota.reset_credits_expiry_failed', {
-                      message: codex.rateLimitResetCreditsError,
-                    })}
-                  </span>
-                ) : credits.length === 0 ? (
-                  <span className={styles.resetUnavailable}>
-                    {t('codex_quota.reset_credits_expiry_unavailable')}
-                  </span>
-                ) : null}
-              </div>
-            </details>
-          )}
-        </div>
+        <ResetCreditsCell
+          prefix="codex_quota"
+          count={resetCount}
+          credits={credits}
+          error={codex.rateLimitResetCreditsError}
+          urgentRowId={urgentRowId}
+          nowMs={now}
+        />
       )}
     </>
   );

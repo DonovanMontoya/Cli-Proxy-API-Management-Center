@@ -503,7 +503,17 @@
     "plan_max": "Max",
     "plan_max5": "Max 5x",
     "plan_max20": "Max 20x",
-    "plan_team": "Team"
+    "plan_team": "Team",
+    "reset_credits_label": "Banked resets",
+    "reset_credits_expiry_label": "Banked reset expiry ({{timezone}})",
+    "reset_credit_number": "Reset {{index}}",
+    "reset_credits_expiry_unavailable": "Expiry dates are unavailable",
+    "reset_button": "Use banked reset",
+    "reset_confirm_title": "Use Claude banked reset",
+    "reset_confirm_message": "This will use 1 banked reset to reset the Claude usage limits for \"{{name}}\". This cannot be undone. Continue?",
+    "reset_confirm_button": "Use reset",
+    "reset_success": "Reset Claude usage limits for \"{{name}}\"",
+    "reset_failed": "Failed to reset Claude usage limits for \"{{name}}\": {{message}}"
   },
   "codex_quota": {
     "title": "Codex Quota",

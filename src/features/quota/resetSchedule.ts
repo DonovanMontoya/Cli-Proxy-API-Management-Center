@@ -30,9 +30,9 @@ export interface QuotaRowInstant {
 }
 
 /**
- * Row identity for a Codex reset credit.
+ * Row identity for a Codex reset credit or a Claude banked reset.
  *
- * Exported so `CodexQuotaBody` can use one expression for both its React key
+ * Exported so the quota bodies can use one expression for both the React key
  * and its highlight comparison. Two copies of `credit.id || fallback` that
  * drift apart would put the emphasis on the wrong row, which is worse than no
  * emphasis at all.
@@ -92,8 +92,9 @@ export function collectQuotaRowInstants(
 
   if (provider === 'claude' || provider === 'codex' || provider === 'devin') {
     const windows = collectRows((quota as { windows?: WindowLike[] }).windows ?? [], 'window');
-    if (provider !== 'codex') return windows;
+    if (provider === 'devin') return windows;
 
+    // Codex manual resets and Claude banked resets share this shape.
     const credits = (
       (quota as { rateLimitResetCredits?: ResetCreditLike[] }).rateLimitResetCredits ?? []
     )
