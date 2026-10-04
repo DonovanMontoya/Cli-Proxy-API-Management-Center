@@ -42,11 +42,13 @@ function WindowCell({
   soon,
   nowMs,
   unavailable = false,
+  muted = false,
 }: {
   window: WindowLike;
   soon: boolean;
   nowMs: number;
   unavailable?: boolean;
+  muted?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const used = window.usedPercent;
@@ -65,10 +67,11 @@ function WindowCell({
       title={
         unavailable
           ? t('quota_management.model_restricted_plan_hint', { model: 'Fable 5.1' })
-          : soon
+          : soon && !muted
             ? t('quota_management.soonest_row_hint')
             : undefined
       }
+      data-muted={muted ? 'true' : undefined}
       aria-disabled={unavailable || undefined}
     >
       <div className={styles.cellHead}>
@@ -90,7 +93,9 @@ function WindowCell({
           <>
             {reset.relative && (
               <span
-                className={soon ? `${styles.relative} ${styles.relativeSoon}` : styles.relative}
+                className={
+                  soon && !muted ? `${styles.relative} ${styles.relativeSoon}` : styles.relative
+                }
               >
                 {reset.relative}
               </span>
@@ -257,7 +262,17 @@ export function QuotaRowCells({ type, quota }: { type: QuotaProviderType; quota:
   return (
     <>
       {(codex.windows ?? []).map((window) => (
-        <WindowCell key={window.id} window={window} soon={window.id === urgentRowId} nowMs={now} />
+        <WindowCell
+          key={window.id}
+          window={window}
+          soon={window.id === urgentRowId}
+          nowMs={now}
+          muted={
+            String(window.labelParams?.name ?? '')
+              .trim()
+              .toLowerCase() === 'gpt-reserve'
+          }
+        />
       ))}
       {(resetCount != null || credits.length > 0 || codex.rateLimitResetCreditsError) && (
         <ResetCreditsCell

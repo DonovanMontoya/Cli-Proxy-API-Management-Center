@@ -147,7 +147,8 @@
   min-width: 0;
 }
 
-.cellUnavailable {
+.cellUnavailable,
+.cell[data-muted='true'] {
   .cellLabel,
   .cellValue,
   .relative,

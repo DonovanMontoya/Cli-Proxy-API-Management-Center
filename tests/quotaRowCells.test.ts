@@ -11,6 +11,33 @@ beforeAll(async () => {
 });
 
 describe('compact quota rows', () => {
+  test('mutes reserve cells in the table without changing quota values or availability', () => {
+    const markup = renderToStaticMarkup(
+      createElement(QuotaRowCells, {
+        type: 'codex',
+        quota: {
+          status: 'success',
+          windows: [
+            { id: 'weekly', label: 'Weekly limit', usedPercent: 20 },
+            {
+              id: 'gpt-reserve-weekly-0',
+              label: 'gpt-reserve weekly',
+              labelParams: { name: 'gpt-reserve' },
+              usedPercent: 0,
+              resetAtMs: Date.now() + 30 * 60 * 1000,
+            },
+          ],
+        } satisfies CodexQuotaState,
+      })
+    );
+    expect(markup.match(/data-muted="true"/g)).toHaveLength(1);
+    expect(markup).toContain('80%');
+    expect(markup).toContain('100%');
+    expect(markup).toContain('width:100%');
+    expect(markup).not.toContain('aria-disabled');
+    expect(markup).not.toContain(i18n.t('quota_management.soonest_row_hint'));
+    expect(markup).not.toContain('Fable');
+  });
   const claude: ClaudeQuotaState = {
     status: 'success',
     planType: 'plan_pro',
