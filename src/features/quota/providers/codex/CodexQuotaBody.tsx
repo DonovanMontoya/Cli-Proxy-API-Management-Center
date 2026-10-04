@@ -1,6 +1,5 @@
 /**
- * Codex 额度渲染体：套餐 chip 行（elite=Pro 20x 液态铂金 / premium=金卡）、
- * 重置积分明细、用量窗口水位条。
+ * Codex quota body: plan badges, reset credits, and usage-window meters.
  */
 
 import { useMemo } from 'react';
@@ -23,7 +22,7 @@ import type { QuotaBodyProps, QuotaClassMap } from '../../types';
 import { getCodexPlanLabel } from './planLabel';
 
 const getPlanValueClass = (planType: string | null, classes: QuotaClassMap): string => {
-  // elite/premium 顺序契约由 resolvePlanTier 承载（tests/quotaPlanTier.test.ts 守护）。
+  // resolvePlanTier defines the elite/premium ordering (see quotaPlanTier tests).
   const tier = resolvePlanTier(planType);
   if (tier === 'elite') return classes.elitePlanValue;
   if (tier === 'premium') return classes.premiumPlanValue;
@@ -168,12 +167,17 @@ export function CodexQuotaBody({ quota, classes }: QuotaBodyProps<CodexQuotaStat
             : window.label;
           const resetDisplay = buildResetDisplay(window.resetLabel, window.resetAtMs, now, locale);
 
-          const soon = window.id === soonestRowId;
+          const muted =
+            String(window.labelParams?.name ?? '')
+              .trim()
+              .toLowerCase() === 'gpt-reserve';
+          const soon = !muted && window.id === soonestRowId;
 
           return (
             <div
               key={window.id}
               className={classes.quotaRow}
+              data-muted={muted ? 'true' : undefined}
               title={soon ? t('quota_management.soonest_row_hint') : undefined}
             >
               <div className={classes.quotaRowHeader}>

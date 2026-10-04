@@ -20,6 +20,18 @@
   min-width: 0;
 }
 
+.quotaRow[data-muted='true'] {
+  .quotaModel,
+  .quotaPercent,
+  .quotaResetRelative {
+    color: var(--text-tertiary);
+  }
+
+  .quotaBarFill {
+    background: var(--text-tertiary);
+  }
+}
+
 .quotaRowHeader {
   display: flex;
   align-items: baseline;

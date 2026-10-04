@@ -61,6 +61,41 @@ describe('CodexQuotaBody', () => {
   };
 
   test.each(['en', 'zh-CN', 'zh-TW', 'ru'])(
+    'mutes reserve windows while preserving their values in %s',
+    async (language) => {
+      await i18n.changeLanguage(language);
+      try {
+        const markup = renderToStaticMarkup(
+          createElement(CodexQuotaBody, {
+            quota: {
+              ...quota,
+              windows: [
+                ...quota.windows,
+                {
+                  id: 'gpt-reserve-weekly-0',
+                  label: 'gpt-reserve weekly',
+                  labelKey: 'codex_quota.additional_secondary_window',
+                  labelParams: { name: 'gpt-reserve' },
+                  usedPercent: 0,
+                  resetLabel: '10-10 17:00',
+                  resetAtMs: now + 6 * DAY_MS,
+                },
+              ],
+            },
+            classes,
+          })
+        );
+        expect(markup.match(/data-muted="true"/g)).toHaveLength(1);
+        expect(markup).toContain('<div class="quotaRow"><div class="quotaRowHeader">');
+        expect(markup).toContain('100%');
+        expect(markup).toContain('width:100%');
+      } finally {
+        await i18n.changeLanguage('en');
+      }
+    }
+  );
+
+  test.each(['en', 'zh-CN', 'zh-TW', 'ru'])(
     'renders Business Premium with its premium badge in %s',
     async (language) => {
       await i18n.changeLanguage(language);
