@@ -102,6 +102,8 @@ export interface QuotaUsageForecastProps {
   quotaFor: (entry: QuotaFileEntry) => QuotaCardState | undefined;
   displayNameFor: (name: string) => string;
   resolvedTheme: ResolvedTheme;
+  historySessionId: string;
+  fileGenerations: Record<string, number>;
   /** Injectable for tests/screenshots; defaults to the real clock. */
   now?: number;
 }
@@ -111,6 +113,8 @@ export function QuotaUsageForecast({
   quotaFor,
   displayNameFor,
   resolvedTheme,
+  historySessionId,
+  fileGenerations,
   now: nowProp,
 }: QuotaUsageForecastProps) {
   const { t, i18n } = useTranslation();
@@ -132,15 +136,14 @@ export function QuotaUsageForecast({
       return !value;
     });
   const [hovered, setHovered] = useState<string | null>(null);
-  const [history, setHistory] = useState<UsageHistory>(readUsageHistory);
+  const [history, setHistory] = useState<UsageHistory>(() => readUsageHistory(historySessionId));
   const tick = useNow(nowProp === undefined);
   const now = nowProp ?? tick;
 
   const laneFor = (entry: QuotaFileEntry, maxPeriodHours: number): TimelineLane =>
     buildTimelineLane({
       name: getQuotaCacheKey(entry.file),
-      displayName:
-        entry.type === 'devin' ? getQuotaDisplayName(entry.file) : displayNameFor(entry.file.name),
+      displayName: displayNameFor(getQuotaDisplayName(entry.file)),
       provider: entry.type,
       quota: quotaFor(entry),
       maxPeriodHours,
@@ -160,7 +163,12 @@ export function QuotaUsageForecast({
       Object.values(MODE_PERIODS).forEach((maxPeriod) => {
         const lane = laneFor(entry, maxPeriod);
         if (lane.anchorMs === null || !lane.periodHours || lane.remaining === null) return;
-        const key = historyKey(lane.name, lane.periodHours);
+        const key = historyKey(
+          entry.type,
+          lane.name,
+          lane.periodHours,
+          fileGenerations[entry.file.name] ?? 0
+        );
         next ??= { ...history };
         next[key] = appendCheckpoint(
           next[key] ?? [],
@@ -170,12 +178,12 @@ export function QuotaUsageForecast({
       });
     });
     if (next) {
-      writeUsageHistory(next);
+      writeUsageHistory(historySessionId, next);
       setHistory(next);
     }
     // laneFor is derived from quotaFor/displayNameFor, which are listed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, quotaFor, displayNameFor]);
+  }, [entries, quotaFor, displayNameFor, historySessionId, fileGenerations]);
 
   /* ---------- Series ---------- */
 
@@ -187,7 +195,10 @@ export function QuotaUsageForecast({
       if (lane.anchorMs === null || !lane.periodHours) return;
       const periodMs = lane.periodHours * HOUR_MS;
       const windowStartMs = lane.anchorMs - periodMs;
-      const recorded = history[historyKey(lane.name, lane.periodHours)] ?? [];
+      const recorded =
+        history[
+          historyKey(entry.type, lane.name, lane.periodHours, fileGenerations[entry.file.name] ?? 0)
+        ] ?? [];
       const forecast = forecastLane(lane, now, recentRate(recorded, windowStartMs, periodMs));
       if (!forecast) return;
 
@@ -202,7 +213,7 @@ export function QuotaUsageForecast({
     const order = sortForecasts(out.map((s) => s.forecast));
     return order.map((f) => out.find((s) => s.forecast === f) as Series);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, quotaFor, displayNameFor, mode, now, history]);
+  }, [entries, quotaFor, displayNameFor, mode, now, history, fileGenerations]);
 
   /* ---------- Layout ---------- */
 
