@@ -34,6 +34,7 @@ import { QuotaHeader } from './components/QuotaHeader';
 import { QuotaRow } from './components/QuotaRow';
 import { QuotaSummary } from './components/QuotaSummary';
 import { QuotaTimeline } from './components/QuotaTimeline';
+import { QuotaUsageForecast } from './components/QuotaUsageForecast';
 import rowStyles from './components/QuotaRow.module.scss';
 import {
   QUOTA_PAGE_SIZE,
@@ -364,6 +365,13 @@ export function QuotaPage() {
         refreshing={loading || batchLoading}
         disableControls={disableControls}
         onRefreshAll={handleRefreshAll}
+      />
+
+      <QuotaUsageForecast
+        entries={entries}
+        quotaFor={getQuota}
+        displayNameFor={displayNameFor}
+        resolvedTheme={resolvedTheme}
       />
 
       <QuotaSummary

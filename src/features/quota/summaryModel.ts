@@ -139,3 +139,33 @@ export function buildProviderSummaries(
 
   return QUOTA_TAB_ORDER.filter((type) => byType.has(type)).map((type) => byType.get(type)!);
 }
+
+const SESSION_WINDOW_ID = 'five-hour';
+const WEEKLY_WINDOW_IDS = ['seven-day', 'weekly'];
+
+/**
+ * Headline windows for a provider card.
+ *
+ * When a provider reports both a session (5-hour) and a weekly window, both
+ * are pinned — session above weekly — so the headline no longer flips between
+ * them as usage shifts. Otherwise (e.g. Codex while it has no 5-hour limit) the
+ * bottleneck window leads, as before.
+ */
+export function splitPrimaryWindows(windows: SummaryWindow[]): {
+  primary: SummaryWindow[];
+  rest: SummaryWindow[];
+} {
+  const usable = windows.filter((window) => window.capacity > 0);
+  const session = usable.find((window) => window.id === SESSION_WINDOW_ID);
+  const weekly = WEEKLY_WINDOW_IDS.map((id) => usable.find((window) => window.id === id)).find(
+    (window) => window !== undefined
+  );
+  if (session && weekly) {
+    return {
+      primary: [session, weekly],
+      rest: windows.filter((window) => window !== session && window !== weekly),
+    };
+  }
+  const [headline, ...rest] = windows;
+  return { primary: headline && headline.capacity > 0 ? [headline] : [], rest };
+}
