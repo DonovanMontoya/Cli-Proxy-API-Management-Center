@@ -1617,7 +1617,21 @@
     "model_restricted_plan_hint": "{{model}} isn't included in this account's plan",
     "model_restricted_reported_hint": "The provider reports {{model}} as unavailable for this account",
     "row_renews": "renews {{date}}",
-    "row_available": "available"
+    "row_available": "available",
+    "forecast_title": "Usage forecast",
+    "forecast_at_risk_one": "{{count}} credential on pace to run out before reset",
+    "forecast_at_risk_other": "{{count}} credentials on pace to run out before reset",
+    "forecast_all_ok": "Every credential is on pace to last until its reset",
+    "forecast_runs_out": "Runs out",
+    "forecast_resets": "Resets",
+    "forecast_legend_used": "Used so far",
+    "forecast_legend_projected": "Projected by reset at current pace",
+    "forecast_average": "avg",
+    "forecast_average_hint": "Not enough checkpoints yet; estimated from the whole-window average.",
+    "windows_now": "Now",
+    "forecast_left": "{{now}}% left → {{end}}%",
+    "summary_session": "Session",
+    "summary_weekly": "Weekly"
   },
   "plugin_management": {
     "title": "Plugin Management",

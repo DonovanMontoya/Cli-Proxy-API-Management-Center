@@ -1,6 +1,7 @@
 /**
- * Summary bar: one panel per provider with the bottleneck window summed across
- * credentials ("160% of 300%"), a segmented meter with one segment per
+ * Summary bar: one panel per provider with the headline window(s) summed across
+ * credentials ("160% of 300%") — session above weekly when both exist,
+ * otherwise the bottleneck — a segmented meter with one segment per
  * credential, the soonest reset, the remaining windows as compact lines, and
  * how many credentials cannot use a restricted model.
  */
@@ -16,6 +17,7 @@ import {
   isThemeSurfaceIconProvider,
 } from '@/features/authFiles/constants';
 import { QUOTA_PROGRESS_HIGH_THRESHOLD, QUOTA_PROGRESS_MEDIUM_THRESHOLD } from './QuotaMeter';
+import { splitPrimaryWindows } from '../summaryModel';
 import type { ProviderSummary, SummaryWindow } from '../summaryModel';
 import styles from './QuotaSummary.module.scss';
 
@@ -31,6 +33,13 @@ const windowLabel = (t: TFunction, window: SummaryWindow): string =>
   window.labelKey
     ? t(window.labelKey, (window.labelParams ?? {}) as Record<string, string | number>)
     : window.label || window.id;
+
+const primaryLabel = (t: TFunction, window: SummaryWindow): string =>
+  window.id === 'five-hour'
+    ? t('quota_management.summary_session', { defaultValue: 'Session' })
+    : window.id === 'seven-day' || window.id === 'weekly'
+      ? t('quota_management.summary_weekly', { defaultValue: 'Weekly' })
+      : windowLabel(t, window);
 
 const levelClass = (remaining: number | null): string => {
   if (remaining === null) return styles.levelUnknown;
@@ -51,7 +60,7 @@ export function QuotaSummary({
   return (
     <section className={styles.panel} aria-label={t('quota_management.summary_label')}>
       {summaries.map((summary) => {
-        const [headline, ...rest] = summary.windows;
+        const { primary, rest } = splitPrimaryWindows(summary.windows);
         const iconSrc = getAuthFileIcon(summary.type, resolvedTheme);
         const typeLabel = getTypeLabel(t, summary.type);
         const restrictedFable =
@@ -60,9 +69,6 @@ export function QuotaSummary({
         const restrictions = Object.entries(restrictionCounts[summary.type] ?? {}).filter(
           ([model]) => !(summary.type === 'claude' && model === 'Fable 5.1')
         );
-        const reset = headline?.nextResetMs
-          ? buildResetDisplay(null, headline.nextResetMs, nowMs, i18n.resolvedLanguage)
-          : null;
 
         return (
           <article key={summary.type} className={styles.provider}>
@@ -87,40 +93,87 @@ export function QuotaSummary({
               </span>
             </header>
 
-            {headline && headline.capacity > 0 ? (
-              <>
-                <div className={styles.windowLabel}>{windowLabel(t, headline)}</div>
-                <div className={styles.total}>
-                  <span className={styles.totalValue}>{Math.round(headline.totalRemaining)}%</span>
-                  <span className={styles.totalCapacity}>
-                    {t('quota_management.summary_of_capacity', { capacity: headline.capacity })}
-                  </span>
-                </div>
-                <div className={styles.segments} aria-hidden="true">
-                  {headline.accounts.map((account, index) => (
-                    <span key={index} className={styles.segment}>
-                      <span
-                        className={`${styles.segmentFill} ${levelClass(account.remaining)}`}
-                        style={{ width: `${account.remaining ?? 0}%` }}
-                      />
-                    </span>
-                  ))}
-                </div>
-                <div className={styles.reset}>
-                  {reset ? (
-                    <>
-                      {reset.relative && (
-                        <span className={styles.resetRelative}>{reset.relative}</span>
-                      )}
-                      <span className={styles.resetAbsolute}>{reset.absolute}</span>
-                    </>
-                  ) : (
-                    <span className={styles.resetAbsolute}>
-                      {t('quota_management.summary_no_reset')}
-                    </span>
-                  )}
-                </div>
-              </>
+            {primary.length > 1 ? (
+              // Session + weekly share the space one headline takes, so this
+              // card stays the same height as single-window cards beside it.
+              <div className={styles.compactStack}>
+                {primary.map((window) => {
+                  const reset = window.nextResetMs
+                    ? buildResetDisplay(null, window.nextResetMs, nowMs, i18n.resolvedLanguage)
+                    : null;
+                  return (
+                    <div key={window.id} className={styles.compact}>
+                      <div className={styles.compactHead}>
+                        <span className={styles.compactLabel}>{primaryLabel(t, window)}</span>
+                        <span className={styles.compactReset} title={reset?.absolute}>
+                          {reset?.relative ?? reset?.absolute ?? ''}
+                        </span>
+                        <span className={styles.compactValue}>
+                          {Math.round(window.totalRemaining)}%
+                          <span className={styles.secondaryCapacity}>/{window.capacity}%</span>
+                        </span>
+                      </div>
+                      <div className={styles.segments} aria-hidden="true">
+                        {window.accounts.map((account, index) => (
+                          <span key={index} className={styles.segment}>
+                            <span
+                              className={`${styles.segmentFill} ${levelClass(account.remaining)}`}
+                              style={{ width: `${account.remaining ?? 0}%` }}
+                            />
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : primary.length > 0 ? (
+              <div className={styles.primaryStack}>
+                {primary.map((window) => {
+                  const reset = window.nextResetMs
+                    ? buildResetDisplay(null, window.nextResetMs, nowMs, i18n.resolvedLanguage)
+                    : null;
+                  return (
+                    <div key={window.id} className={styles.primary}>
+                      <div className={styles.windowLabel}>{windowLabel(t, window)}</div>
+                      <div className={styles.total}>
+                        <span className={styles.totalValue}>
+                          {Math.round(window.totalRemaining)}%
+                        </span>
+                        <span className={styles.totalCapacity}>
+                          {t('quota_management.summary_of_capacity', {
+                            capacity: window.capacity,
+                          })}
+                        </span>
+                      </div>
+                      <div className={styles.segments} aria-hidden="true">
+                        {window.accounts.map((account, index) => (
+                          <span key={index} className={styles.segment}>
+                            <span
+                              className={`${styles.segmentFill} ${levelClass(account.remaining)}`}
+                              style={{ width: `${account.remaining ?? 0}%` }}
+                            />
+                          </span>
+                        ))}
+                      </div>
+                      <div className={styles.reset}>
+                        {reset ? (
+                          <>
+                            {reset.relative && (
+                              <span className={styles.resetRelative}>{reset.relative}</span>
+                            )}
+                            <span className={styles.resetAbsolute}>{reset.absolute}</span>
+                          </>
+                        ) : (
+                          <span className={styles.resetAbsolute}>
+                            {t('quota_management.summary_no_reset')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
               <div className={styles.placeholder}>
                 {summary.loadedCount === 0

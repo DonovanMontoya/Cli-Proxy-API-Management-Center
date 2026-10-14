@@ -72,6 +72,65 @@
   white-space: nowrap;
 }
 
+.primaryStack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.compactStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* Roughly one headline's height (label + total + bar + reset). */
+  padding: 2px 0 4px;
+}
+
+.compact {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.compactHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.compactLabel {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.compactReset {
+  flex: 1;
+  min-width: 0;
+  font-family: $font-mono;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  @include text-ellipsis;
+}
+
+.compactValue {
+  font-family: $font-mono;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.primary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
 .windowLabel {
   font-size: 12px;
   color: var(--text-secondary);
