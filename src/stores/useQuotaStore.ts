@@ -4,6 +4,11 @@
 
 import { create } from 'zustand';
 import { getQuotaCacheFileName } from '@/utils/quota/identity';
+import {
+  getUsageHistorySession,
+  invalidateUsageHistory,
+  resetUsageHistorySession,
+} from '@/features/quota/usageHistory';
 import type {
   AntigravityQuotaState,
   ClaudeQuotaState,
@@ -17,6 +22,7 @@ import type {
 type QuotaUpdater<T> = T | ((prev: T) => T);
 
 interface QuotaStoreState {
+  historySessionId: string;
   cacheGeneration: number;
   fileGenerations: Record<string, number>;
   antigravityQuota: Record<string, AntigravityQuotaState>;
@@ -44,6 +50,7 @@ const resolveUpdater = <T>(updater: QuotaUpdater<T>, prev: T): T => {
 };
 
 export const useQuotaStore = create<QuotaStoreState>((set) => ({
+  historySessionId: getUsageHistorySession(),
   cacheGeneration: 0,
   fileGenerations: {},
   antigravityQuota: {},
@@ -83,6 +90,7 @@ export const useQuotaStore = create<QuotaStoreState>((set) => ({
     set((state) => {
       if (names) {
         if (names.length === 0) return state;
+        invalidateUsageHistory(names);
         const fileGenerations = { ...state.fileGenerations };
         names.forEach((name) => {
           fileGenerations[name] = (fileGenerations[name] ?? 0) + 1;
@@ -109,6 +117,7 @@ export const useQuotaStore = create<QuotaStoreState>((set) => ({
         };
       }
       return {
+        historySessionId: resetUsageHistorySession(),
         cacheGeneration: state.cacheGeneration + 1,
         fileGenerations: {},
         antigravityQuota: {},

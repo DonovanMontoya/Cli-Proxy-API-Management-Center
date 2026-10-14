@@ -94,6 +94,8 @@ export function QuotaPage() {
   /* ---------- File list ---------- */
 
   const sessionGeneration = useQuotaStore((state) => state.cacheGeneration);
+  const historySessionId = useQuotaStore((state) => state.historySessionId);
+  const fileGenerations = useQuotaStore((state) => state.fileGenerations);
   const [filesGeneration, setFilesGeneration] = useState<number | null>(null);
   const listRequestRef = useRef(0);
   const loadFiles = useCallback(async () => {
@@ -368,6 +370,9 @@ export function QuotaPage() {
       />
 
       <QuotaUsageForecast
+        key={JSON.stringify([historySessionId, fileGenerations])}
+        historySessionId={historySessionId}
+        fileGenerations={fileGenerations}
         entries={entries}
         quotaFor={getQuota}
         displayNameFor={displayNameFor}
