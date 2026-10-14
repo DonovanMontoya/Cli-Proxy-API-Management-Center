@@ -480,6 +480,8 @@
     "fetch_all": "Получить все"
   },
   "claude_quota": {
+    "renewal_label": "Продление (оценка)",
+    "renewal_hint": "Рассчитано по дате начала подписки; Anthropic не сообщает дату списания напрямую.",
     "title": "Квота Claude",
     "empty_title": "Файлы авторизации Claude OAuth отсутствуют",
     "empty_desc": "Войдите через Claude OAuth, чтобы увидеть квоту.",

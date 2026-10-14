@@ -475,6 +475,8 @@
     "fetch_all": "获取全部"
   },
   "claude_quota": {
+    "renewal_label": "续费（估算）",
+    "renewal_hint": "根据订阅开始日期估算；Anthropic 不直接提供扣费日期。",
     "title": "Claude 额度",
     "empty_title": "暂无 Claude OAuth 认证",
     "empty_desc": "使用 Claude OAuth 登录后即可查看额度。",

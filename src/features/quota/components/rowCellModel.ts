@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 import type { ClaudeQuotaState, CodexQuotaState } from '@/types';
-import { buildResetDisplay, resolveResetMs } from '@/utils/quota';
+import { buildResetDisplay, formatInstantShort, resolveResetMs } from '@/utils/quota';
 import { formatDateTimeValue } from '@/utils/format';
 import { getCodexPlanLabel } from '../providers/codex/planLabel';
 import type { QuotaProviderType } from '../providers/types';
@@ -20,8 +20,16 @@ export function rowSubtitleParts(
   if (state?.status !== 'success') return [];
 
   if (type === 'claude') {
-    const planType = (quota as ClaudeQuotaState).planType;
-    return planType ? [t(`claude_quota.${planType}`)] : [];
+    const claude = quota as ClaudeQuotaState;
+    const parts: string[] = [];
+    if (claude.planType) parts.push(t(`claude_quota.${claude.planType}`));
+    const renewsAtMs = claude.subscriptionRenewsAtMs ?? null;
+    if (renewsAtMs !== null) {
+      // Estimated from the subscription start, hence the "~".
+      const display = buildResetDisplay(formatInstantShort(renewsAtMs), renewsAtMs, nowMs, locale);
+      if (display) parts.push(t('quota_management.row_renews', { date: `~${display.absolute}` }));
+    }
+    return parts;
   }
 
   if (type === 'codex') {

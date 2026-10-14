@@ -193,6 +193,11 @@ export interface ClaudeQuotaState {
   windows: ClaudeQuotaWindow[];
   extraUsage?: ClaudeExtraUsage | null;
   planType?: string | null;
+  /**
+   * Next billing renewal in epoch ms, estimated as the next monthly anniversary
+   * of `subscription_created_at`; Anthropic reports no renewal date directly.
+   */
+  subscriptionRenewsAtMs?: number | null;
   /** Banked resets still unspent; null when the account has no grant. */
   rateLimitResetCreditsAvailableCount?: number | null;
   rateLimitResetCredits?: ClaudeRateLimitResetCredit[];

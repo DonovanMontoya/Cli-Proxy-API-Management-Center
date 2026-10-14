@@ -23,6 +23,11 @@ export function ClaudeQuotaBody({ quota, classes }: QuotaBodyProps<ClaudeQuotaSt
   const windows = quota.windows ?? [];
   const extraUsage = quota.extraUsage ?? null;
   const planType = quota.planType ?? null;
+  const renewsAtMs = quota.subscriptionRenewsAtMs ?? null;
+  const renewalDisplay =
+    renewsAtMs === null
+      ? null
+      : buildResetDisplay(formatInstantShort(renewsAtMs), renewsAtMs, now, i18n.resolvedLanguage);
   const resetCount = quota.rateLimitResetCreditsAvailableCount ?? null;
   const resetCredits = quota.rateLimitResetCredits ?? [];
 
@@ -32,6 +37,15 @@ export function ClaudeQuotaBody({ quota, classes }: QuotaBodyProps<ClaudeQuotaSt
         <div className={classes.codexPlan}>
           <span className={classes.codexPlanLabel}>{t('claude_quota.plan_label')}</span>
           <span className={classes.codexPlanValue}>{t(`claude_quota.${planType}`)}</span>
+        </div>
+      )}
+      {renewalDisplay && (
+        <div className={classes.codexPlan} title={t('claude_quota.renewal_hint')}>
+          <span className={classes.codexPlanLabel}>{t('claude_quota.renewal_label')}</span>
+          <span className={classes.codexPlanValue}>{renewalDisplay.absolute}</span>
+          {renewalDisplay.relative && (
+            <span className={classes.quotaResetRelative}>{renewalDisplay.relative}</span>
+          )}
         </div>
       )}
       {extraUsage && extraUsage.is_enabled && (

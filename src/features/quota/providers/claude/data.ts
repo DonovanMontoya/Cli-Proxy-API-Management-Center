@@ -43,6 +43,7 @@ export type ClaudeQuotaData = {
   windows: ClaudeQuotaWindow[];
   extraUsage?: ClaudeExtraUsage | null;
   planType?: string | null;
+  subscriptionRenewsAtMs: number | null;
   rateLimitResetCreditsAvailableCount: number | null;
   rateLimitResetCredits: ClaudeRateLimitResetCredit[];
 };
@@ -206,6 +207,49 @@ export const resolveClaudePlanType = (profile: ClaudeProfileResponse | null): st
   return null;
 };
 
+/**
+ * Estimates the next billing renewal as the first monthly anniversary of the
+ * subscription start that is after `nowMs`. The day is clamped to the month's
+ * length (a subscription started on the 31st renews on Feb 28/29). Returns
+ * null when there is no paid subscription or no parseable start date.
+ */
+export const estimateClaudeRenewalMs = (
+  profile: ClaudeProfileResponse | null,
+  planType: string | null,
+  nowMs: number
+): number | null => {
+  if (!profile || !planType || planType === 'plan_free') return null;
+  const status = normalizeStringValue(profile.organization?.subscription_status)?.toLowerCase();
+  if (status && status !== 'active') return null;
+  const startMs = Date.parse(
+    normalizeStringValue(profile.organization?.subscription_created_at) ?? ''
+  );
+  if (!Number.isFinite(startMs)) return null;
+
+  const start = new Date(startMs);
+  const anniversary = (monthOffset: number) => {
+    const year = start.getUTCFullYear();
+    const month = start.getUTCMonth() + monthOffset;
+    const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    return Date.UTC(
+      year,
+      month,
+      Math.min(start.getUTCDate(), daysInMonth),
+      start.getUTCHours(),
+      start.getUTCMinutes(),
+      start.getUTCSeconds()
+    );
+  };
+
+  const now = new Date(nowMs);
+  let offset = Math.max(
+    1,
+    (now.getUTCFullYear() - start.getUTCFullYear()) * 12 + now.getUTCMonth() - start.getUTCMonth()
+  );
+  while (anniversary(offset) <= nowMs) offset += 1;
+  return anniversary(offset);
+};
+
 const fetchClaudeQuota = async (file: AuthFileItem, t: TFunction): Promise<ClaudeQuotaData> => {
   const rawAuthIndex = file['auth_index'] ?? file.authIndex;
   const authIndex = normalizeAuthIndex(rawAuthIndex);
@@ -244,19 +288,19 @@ const fetchClaudeQuota = async (file: AuthFileItem, t: TFunction): Promise<Claud
   }
 
   const windows = buildClaudeQuotaWindows(payload, t);
-  const planType =
+  const profile =
     profileResult.status === 'fulfilled' &&
     profileResult.value.statusCode >= 200 &&
     profileResult.value.statusCode < 300
-      ? resolveClaudePlanType(
-          parseClaudeProfilePayload(profileResult.value.body ?? profileResult.value.bodyText)
-        )
+      ? parseClaudeProfilePayload(profileResult.value.body ?? profileResult.value.bodyText)
       : null;
+  const planType = resolveClaudePlanType(profile);
 
   return {
     windows,
     extraUsage: payload.extra_usage,
     planType,
+    subscriptionRenewsAtMs: estimateClaudeRenewalMs(profile, planType, Date.now()),
     ...summarizeClaudeBankedResets(parseAnthropicResetGrantStatus(payload.cedar_ember), Date.now()),
   };
 };
@@ -318,6 +362,7 @@ export const CLAUDE_CONFIG: QuotaProviderData<ClaudeQuotaState, ClaudeQuotaData>
     windows: data.windows,
     extraUsage: data.extraUsage,
     planType: data.planType,
+    subscriptionRenewsAtMs: data.subscriptionRenewsAtMs,
     rateLimitResetCreditsAvailableCount: data.rateLimitResetCreditsAvailableCount,
     rateLimitResetCredits: data.rateLimitResetCredits,
   }),

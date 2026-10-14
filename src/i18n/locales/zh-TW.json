@@ -475,6 +475,8 @@
     "fetch_all": "取得全部"
   },
   "claude_quota": {
+    "renewal_label": "續訂（估算）",
+    "renewal_hint": "根據訂閱開始日期估算；Anthropic 不直接提供扣款日期。",
     "title": "Claude 配額",
     "empty_title": "暫無 Claude OAuth 驗證",
     "empty_desc": "使用 Claude OAuth 登入後即可查看配額。",
