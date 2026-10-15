@@ -1,0 +1,153 @@
+@use '../../../styles/variables' as *;
+
+.drain {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.legendRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.swatch {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--series);
+}
+
+.legendNote {
+  color: var(--text-quaternary);
+}
+
+.show {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-quaternary);
+
+  // The shared trigger is sized for forms; keep it compact here.
+  button {
+    height: 28px;
+    font-size: 12px;
+    box-shadow: none;
+    background: transparent;
+  }
+}
+
+.chart {
+  position: relative;
+  width: 100%;
+
+  svg {
+    display: block;
+    overflow: visible;
+  }
+}
+
+.gridLine {
+  stroke: var(--border-color);
+  stroke-width: 1;
+  opacity: 0.6;
+}
+
+.axisText {
+  font-size: 11px;
+  fill: var(--text-quaternary);
+  font-variant-numeric: tabular-nums;
+}
+
+.line {
+  fill: none;
+  stroke: var(--series);
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.lone {
+  fill: var(--series);
+}
+
+.empty {
+  position: absolute;
+  inset: 0 0 28px 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-md;
+  font-size: 13px;
+  color: var(--text-quaternary);
+  text-align: center;
+}
+
+.footnote {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--text-quaternary);
+}
+
+.projected {
+  display: inline-block;
+  width: 14px;
+  margin-right: 2px;
+  border-top: 2px dashed var(--series);
+}
+
+.nowLine {
+  stroke: var(--text-tertiary, var(--text-quaternary));
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+
+.nowText {
+  font-size: 11px;
+  fill: var(--text-quaternary);
+}
+
+.projection {
+  fill: none;
+  stroke: var(--series);
+  stroke-width: 1.75;
+  stroke-dasharray: 4 4;
+  stroke-linejoin: round;
+}
+
+.hoverLine {
+  stroke: var(--series);
+  stroke-width: 1;
+  opacity: 0.6;
+}
+
+.hoverDot {
+  fill: var(--series);
+  stroke: var(--bg-primary);
+  stroke-width: 2;
+}
+
+.tooltip {
+  position: absolute;
+  padding: 4px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--text-primary);
+  background: var(--floating-surface, var(--bg-primary));
+  border: 1px solid var(--border-hover);
+  border-radius: 6px;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  font-variant-numeric: tabular-nums;
+}

@@ -58,7 +58,7 @@ const render = (displayNameFor: (name: string) => string) =>
   );
 
 describe('forecast privacy', () => {
-  test('masks composed Devin labels in legends and every SVG title', () => {
+  test('masks composed Devin labels in the list and leaks no identity into the chart', () => {
     writeUsageHistory(
       getUsageHistorySession(),
       Object.fromEntries(
@@ -70,14 +70,13 @@ describe('forecast privacy', () => {
     );
     const markup = render(maskPii);
     expect(markup).toContain('role="img"');
-    // Checkpoint, current reading and runout titles for each of two Devin identities.
+    // The aggregate chart is anonymous; any SVG title that does appear must be masked.
     const titles = [...markup.matchAll(/<title>([\s\S]*?)<\/title>/g)].map((match) => match[1]);
-    expect(titles).toHaveLength(6);
+    expect(titles.every((title) => title.includes('•••'))).toBe(true);
     for (const entry of entries) {
       expect(markup).not.toContain(entry.file.email!);
       expect(markup).toContain(maskPii(getQuotaDisplayName(entry.file)));
     }
-    expect(titles.every((title) => title.includes('•••'))).toBe(true);
   });
 
   test('retains distinct composed labels when privacy mode is off', () => {

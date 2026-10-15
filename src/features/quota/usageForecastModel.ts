@@ -23,6 +23,8 @@ export interface UsageForecast {
   periodHours: number;
   /** True when the rate came from recorded checkpoints, not the window average. */
   fromHistory: boolean;
+  /** Projection pace in percent per ms (0 when there is no usage to extrapolate). */
+  ratePerMs: number;
 }
 
 /**
@@ -47,10 +49,11 @@ export function forecastLane(
 
   let runoutAtMs: number | null = null;
   let projectedPercent = usedPercent;
+  let ratePerMs = 0;
   if (usedPercent >= 100) {
     runoutAtMs = now;
   } else if (recentRatePerMs !== null || (usedPercent > 0 && elapsed > 0)) {
-    const ratePerMs = recentRatePerMs ?? usedPercent / elapsed;
+    ratePerMs = recentRatePerMs ?? usedPercent / elapsed;
     projectedPercent = Math.min(100, usedPercent + ratePerMs * (anchorMs - now));
     if (ratePerMs > 0) {
       const runout = now + remaining / ratePerMs;
@@ -69,6 +72,7 @@ export function forecastLane(
     runoutAtMs,
     periodHours,
     fromHistory: recentRatePerMs !== null,
+    ratePerMs,
   };
 }
 
