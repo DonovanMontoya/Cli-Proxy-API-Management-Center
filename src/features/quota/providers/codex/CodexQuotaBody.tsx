@@ -24,8 +24,8 @@ import { QuotaResetLabel } from '../../components/QuotaResetLabel';
 import { collectQuotaRowInstants, pickUrgentRowId, resetCreditRowId } from '../../resetSchedule';
 import type { QuotaBodyProps, QuotaClassMap } from '../../types';
 import { getCodexPlanLabel } from './planLabel';
-import { useCodexMeterMarkers, useCodexUsageLimitPolicy } from './useCodexUsageLimits';
-import { readCodexUsageLimitPause } from './usageLimits';
+import { UsageLimitPauseLine } from '../../usageLimits/UsageLimitPauseLine';
+import { useUsageLimitMarkers, useUsageLimitPolicy } from '../../usageLimits/useUsageLimits';
 
 const getPlanValueClass = (planType: string | null, classes: QuotaClassMap): string => {
   // resolvePlanTier defines the elite/premium ordering (see quotaPlanTier tests).
@@ -54,10 +54,8 @@ export function CodexQuotaBody({ quota, classes, file }: QuotaBodyProps<CodexQuo
   const rateLimitResetCredits = quota.rateLimitResetCredits ?? [];
   const rateLimitResetCreditsError = quota.rateLimitResetCreditsError ?? '';
 
-  const usageLimitPolicy = useCodexUsageLimitPolicy(file);
-  const markersFor = useCodexMeterMarkers(usageLimitPolicy, now);
-  const pause = readCodexUsageLimitPause(file, now);
-  const pauseDisplay = pause ? buildResetDisplay(null, pause.untilMs, now, locale) : null;
+  const usageLimitPolicy = useUsageLimitPolicy('codex', file);
+  const markersFor = useUsageLimitMarkers(usageLimitPolicy, now);
 
   const planLabel = getCodexPlanLabel(planType, t);
   const planValueClass = getPlanValueClass(planType, classes);
@@ -118,12 +116,7 @@ export function CodexQuotaBody({ quota, classes, file }: QuotaBodyProps<CodexQuo
           )}
         </div>
       )}
-      {pause && pauseDisplay && (
-        <div className={classes.codexUsageLimitPause} title={pause.reason || undefined}>
-          <span>{t('codex_quota.limits.paused_label')}</span>
-          <QuotaResetLabel display={pauseDisplay} classes={classes} />
-        </div>
-      )}
+      <UsageLimitPauseLine file={file} classes={classes} nowMs={now} />
       {rateLimitResetCredits.length > 0 ? (
         <div className={classes.codexResetCredits}>
           <div className={classes.codexResetCreditsTitle}>

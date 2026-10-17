@@ -150,3 +150,54 @@ describe('Codex usage-limit defaults', () => {
     }
   });
 });
+
+describe('Claude usage-limit defaults', () => {
+  test('missing keys read as off', () => {
+    const config = runVisualConfig('server:\n  port: 8317\n');
+    expect(config.visualValues.quotaClaudeReservePercent).toBe('');
+    expect(config.visualValues.quotaClaudeDailyPacing).toBe(false);
+  });
+
+  test('round-trips independently of the Codex defaults', () => {
+    const yaml = `quota-exceeded:
+  codex-reserve-percent: 11
+  codex-daily-pacing: false
+  claude-reserve-percent: 7.5
+  claude-daily-pacing: true
+`;
+    const config = runVisualConfig(yaml);
+    expect(config.visualValues.quotaCodexReservePercent).toBe('11');
+    expect(config.visualValues.quotaCodexDailyPacing).toBe(false);
+    expect(config.visualValues.quotaClaudeReservePercent).toBe('7.5');
+    expect(config.visualValues.quotaClaudeDailyPacing).toBe(true);
+    expect(parseYaml(config.applyVisualChangesToYaml(yaml))).toEqual(parseYaml(yaml));
+  });
+
+  test('editing Claude leaves the Codex keys alone', () => {
+    const yaml = 'quota-exceeded:\n  codex-reserve-percent: 11\n';
+    const config = runVisualConfig(yaml, [
+      { quotaClaudeReservePercent: '9', quotaClaudeDailyPacing: true },
+    ]);
+    expect(parseYaml(config.applyVisualChangesToYaml(yaml))).toEqual({
+      'quota-exceeded': {
+        'codex-reserve-percent': 11,
+        'claude-reserve-percent': 9,
+        'claude-daily-pacing': true,
+      },
+    });
+    const cleared = runVisualConfig(yaml + '  claude-reserve-percent: 9\n', [
+      { quotaClaudeReservePercent: '' },
+    ]);
+    expect(
+      parseYaml(cleared.applyVisualChangesToYaml(yaml + '  claude-reserve-percent: 9\n'))
+    ).toEqual({ 'quota-exceeded': { 'codex-reserve-percent': 11 } });
+  });
+
+  test('validates the Claude reserve as a 0-100 percentage', () => {
+    const errorFor = (quotaClaudeReservePercent: string) =>
+      getVisualConfigValidationErrors({ ...DEFAULT_VISUAL_VALUES, quotaClaudeReservePercent })
+        .quotaClaudeReservePercent;
+    expect(errorFor('25')).toBeUndefined();
+    expect(errorFor('101')).toBe('percent_range');
+  });
+});

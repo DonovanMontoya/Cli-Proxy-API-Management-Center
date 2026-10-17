@@ -1,6 +1,6 @@
 /**
- * Per-credential Codex usage limits: a row action that opens a small dialog
- * for the reserve and daily pacing overrides.
+ * Per-credential usage limits (Codex, Claude): a row action that opens a small
+ * dialog for the reserve and daily pacing overrides.
  *
  * Each override is either inherited from the global quota-exceeded default
  * (saved as null) or pinned on this credential. The preview below the
@@ -17,35 +17,46 @@ import { Modal } from '@/components/ui/Modal';
 import { useNow } from '@/hooks/useNow';
 import { authFilesApi } from '@/services/api';
 import { useNotificationStore } from '@/stores';
-import type { AuthFileItem, CodexQuotaState } from '@/types';
+import type { AuthFileItem } from '@/types';
 import { getErrorMessage } from '@/utils/helpers';
 import { buildResetDisplay } from '@/utils/quota';
 import {
   QUOTA_PROGRESS_HIGH_THRESHOLD,
   QUOTA_PROGRESS_MEDIUM_THRESHOLD,
   QuotaMeterMarkers,
-} from '../../components/QuotaMeter';
-import { withMarkerHost } from '../../components/meterMarkers';
+} from '../components/QuotaMeter';
+import { withMarkerHost } from '../components/meterMarkers';
 import {
-  CODEX_RESERVE_MAX_PERCENT,
-  buildCodexUsageLimitPatch,
-  computeCodexDailyPace,
+  USAGE_LIMIT_RESERVE_MAX_PERCENT,
+  buildUsageLimitPatch,
+  clampPercent,
+  computeDailyPace,
   formatLimitPercent,
-  isCodexReserveReached,
-  isCodexUsageLimitActive,
-  isCodexUsageLimitWindow,
-  pickCodexPacedWindow,
-  readCodexUsageLimitOverrides,
-  resolveCodexUsageLimitPolicy,
-  type CodexUsageLimitOverrides,
-  type CodexUsageLimitPolicy,
-} from './usageLimits';
-import {
-  useCodexMeterMarkers,
-  useCodexUsageLimitDefaults,
-  useCodexUsageLimitPolicy,
-} from './useCodexUsageLimits';
-import styles from './CodexUsageLimits.module.scss';
+  isReserveReached,
+  isUsageLimitActive,
+  isUsageLimitWindow,
+  pickPacedWindow,
+  readUsageLimitOverrides,
+  resolveUsageLimitPolicy,
+  type UsageLimitOverrides,
+  type UsageLimitPolicy,
+  type UsageLimitProvider,
+  type UsageLimitWindow,
+} from './model';
+import { useUsageLimitDefaults, useUsageLimitMarkers, useUsageLimitPolicy } from './useUsageLimits';
+import styles from './UsageLimitsAction.module.scss';
+
+interface UsageLimitPreviewWindow extends UsageLimitWindow {
+  label: string;
+  labelKey?: string;
+  labelParams?: Record<string, string | number>;
+}
+
+/** The slice of a Codex / Claude quota state the preview reads. */
+export interface UsageLimitQuota {
+  status: string;
+  windows?: UsageLimitPreviewWindow[];
+}
 
 type PacingChoice = 'default' | 'on' | 'off';
 
@@ -60,11 +71,11 @@ const pacingValueOf = (choice: PacingChoice): boolean | null =>
 /** "11%", or "Off" when there is no reserve. */
 const reserveLabel = (percent: number, t: TFunction): string =>
   percent > 0
-    ? t('codex_quota.limits.percent', { value: formatLimitPercent(percent) })
-    : t('codex_quota.limits.off');
+    ? t('quota_management.usage_limits.percent', { value: formatLimitPercent(percent) })
+    : t('quota_management.usage_limits.off');
 
 const toggleLabel = (enabled: boolean, t: TFunction): string =>
-  enabled ? t('codex_quota.limits.on') : t('codex_quota.limits.off');
+  enabled ? t('quota_management.usage_limits.on') : t('quota_management.usage_limits.off');
 
 /** A custom reserve as typed: a number within 0..max, or null while invalid. */
 const parseReserve = (text: string, max: number): number | null => {
@@ -74,10 +85,11 @@ const parseReserve = (text: string, max: number): number | null => {
   return value >= 0 && value <= max ? value : null;
 };
 
-export interface CodexUsageLimitsActionProps {
+export interface UsageLimitsActionProps {
+  provider: UsageLimitProvider;
   file: AuthFileItem;
   displayName: string;
-  quota?: CodexQuotaState;
+  quota?: UsageLimitQuota;
   disabled: boolean;
   /** Reloads the credential list so the new overrides show up. */
   onSaved: () => void | Promise<void>;
@@ -85,20 +97,21 @@ export interface CodexUsageLimitsActionProps {
   className?: string;
 }
 
-export function CodexUsageLimitsAction({
+export function UsageLimitsAction({
+  provider,
   file,
   displayName,
   quota,
   disabled,
   onSaved,
   className,
-}: CodexUsageLimitsActionProps) {
+}: UsageLimitsActionProps) {
   const { t } = useTranslation();
-  const policy = useCodexUsageLimitPolicy(file);
+  const policy = useUsageLimitPolicy(provider, file);
   const [open, setOpen] = useState(false);
   // A fresh key per opening resets the draft to the saved values.
   const [session, setSession] = useState(0);
-  const active = policy !== null && isCodexUsageLimitActive(policy);
+  const active = policy !== null && isUsageLimitActive(policy);
   const summary = useMemo(() => (policy ? describePolicy(policy, t) : ''), [policy, t]);
 
   return (
@@ -116,12 +129,13 @@ export function CodexUsageLimitsAction({
         aria-haspopup="dialog"
       >
         <IconSlidersHorizontal size={13} aria-hidden="true" />
-        {t('codex_quota.limits.button')}
+        {t('quota_management.usage_limits.button')}
       </button>
       {/* Mounted on first open only, so idle rows skip the dialog body on every tick. */}
       {session > 0 && (
-        <CodexUsageLimitsDialog
+        <UsageLimitsDialog
           key={session}
+          provider={provider}
           open={open}
           file={file}
           displayName={displayName}
@@ -134,38 +148,43 @@ export function CodexUsageLimitsAction({
   );
 }
 
-function describePolicy(policy: CodexUsageLimitPolicy, t: TFunction): string {
-  return t('codex_quota.limits.summary', {
+function describePolicy(policy: UsageLimitPolicy, t: TFunction): string {
+  return t('quota_management.usage_limits.summary', {
     reserve: reserveLabel(policy.reservePercent, t),
     pacing: toggleLabel(policy.dailyPacing, t),
   });
 }
 
-interface CodexUsageLimitsDialogProps {
+interface UsageLimitsDialogProps {
+  provider: UsageLimitProvider;
   open: boolean;
   file: AuthFileItem;
   displayName: string;
-  quota?: CodexQuotaState;
+  quota?: UsageLimitQuota;
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }
 
-function CodexUsageLimitsDialog({
+function UsageLimitsDialog({
+  provider,
   open,
   file,
   displayName,
   quota,
   onClose,
   onSaved,
-}: CodexUsageLimitsDialogProps) {
+}: UsageLimitsDialogProps) {
   const { t, i18n } = useTranslation();
   const showNotification = useNotificationStore((state) => state.showNotification);
   const now = useNow();
-  const defaults = useCodexUsageLimitDefaults();
+  const defaults = useUsageLimitDefaults(provider);
   const reserveHelpId = useId();
 
-  const saved = readCodexUsageLimitOverrides(file);
-  const reserveMax = Math.max(CODEX_RESERVE_MAX_PERCENT, Math.ceil(saved.reservePercent ?? 0));
+  const saved = readUsageLimitOverrides(file);
+  const reserveMax = Math.max(
+    USAGE_LIMIT_RESERVE_MAX_PERCENT,
+    Math.ceil(saved.reservePercent ?? 0)
+  );
   const [reserveCustom, setReserveCustom] = useState(saved.reservePercent !== null);
   // Switching to a custom reserve starts from the default, or a suggestion when it is off.
   const [reserveText, setReserveText] = useState(() =>
@@ -181,25 +200,28 @@ function CodexUsageLimitsDialog({
 
   const customReserve = parseReserve(reserveText, reserveMax);
   const reserveInvalid = reserveCustom && customReserve === null;
-  const draft: CodexUsageLimitOverrides = {
+  const draft: UsageLimitOverrides = {
     reservePercent: reserveCustom ? customReserve : null,
     dailyPacing: pacingValueOf(pacingChoice),
   };
-  const policy = resolveCodexUsageLimitPolicy(defaults, draft);
-  const patch = reserveInvalid ? null : buildCodexUsageLimitPatch(saved, draft);
+  const policy = resolveUsageLimitPolicy(provider, defaults, draft);
+  const patch = reserveInvalid ? null : buildUsageLimitPatch(saved, draft);
 
   const handleSave = async () => {
     if (!patch || saving) return;
     setSaving(true);
     try {
       await authFilesApi.patchFields(file.name, patch);
-      showNotification(t('codex_quota.limits.save_success', { name: displayName }), 'success');
+      showNotification(
+        t('quota_management.usage_limits.save_success', { name: displayName }),
+        'success'
+      );
       onClose();
       await onSaved();
     } catch (err: unknown) {
       const message = getErrorMessage(err, t('common.unknown_error'));
       showNotification(
-        t('codex_quota.limits.save_failed', { name: displayName, message }),
+        t('quota_management.usage_limits.save_failed', { name: displayName, message }),
         'error'
       );
     } finally {
@@ -213,7 +235,7 @@ function CodexUsageLimitsDialog({
       onClose={onClose}
       width={460}
       closeDisabled={saving}
-      title={t('codex_quota.limits.title')}
+      title={t('quota_management.usage_limits.title')}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={saving}>
@@ -230,29 +252,31 @@ function CodexUsageLimitsDialog({
           <span className={styles.account} title={displayName}>
             {displayName}
           </span>
-          {t('codex_quota.limits.description')}
+          {t('quota_management.usage_limits.description')}
         </p>
 
         <section className={styles.section}>
           <div className={styles.sectionHead}>
-            <span className={styles.sectionTitle}>{t('codex_quota.limits.reserve_label')}</span>
+            <span className={styles.sectionTitle}>
+              {t('quota_management.usage_limits.reserve_label')}
+            </span>
             <EffectiveChip
               value={reserveLabel(policy.reservePercent, t)}
               inherited={policy.reserveInherited}
             />
           </div>
           <Segmented
-            label={t('codex_quota.limits.reserve_label')}
+            label={t('quota_management.usage_limits.reserve_label')}
             value={reserveCustom ? 'custom' : 'default'}
             disabled={saving}
             options={[
               {
                 value: 'default',
-                label: t('codex_quota.limits.use_default', {
+                label: t('quota_management.usage_limits.use_default', {
                   value: reserveLabel(defaults.reservePercent, t),
                 }),
               },
-              { value: 'custom', label: t('codex_quota.limits.custom') },
+              { value: 'custom', label: t('quota_management.usage_limits.custom') },
             ]}
             onChange={(next) => setReserveCustom(next === 'custom')}
           />
@@ -266,7 +290,7 @@ function CodexUsageLimitsDialog({
               value={reserveCustom ? (customReserve ?? 0) : defaults.reservePercent}
               onChange={(event) => setReserveText(event.target.value)}
               disabled={!reserveCustom || saving}
-              aria-label={t('codex_quota.limits.reserve_label')}
+              aria-label={t('quota_management.usage_limits.reserve_label')}
               aria-describedby={reserveHelpId}
             />
             <div className={styles.numberField}>
@@ -280,7 +304,7 @@ function CodexUsageLimitsDialog({
                 value={reserveCustom ? reserveText : formatLimitPercent(defaults.reservePercent)}
                 onChange={(event) => setReserveText(event.target.value)}
                 disabled={!reserveCustom || saving}
-                aria-label={t('codex_quota.limits.reserve_input_label')}
+                aria-label={t('quota_management.usage_limits.reserve_input_label')}
                 aria-invalid={reserveInvalid || undefined}
                 aria-describedby={reserveHelpId}
               />
@@ -295,27 +319,29 @@ function CodexUsageLimitsDialog({
             role={reserveInvalid ? 'alert' : undefined}
           >
             {reserveInvalid
-              ? t('codex_quota.limits.reserve_invalid', { max: reserveMax })
-              : t('codex_quota.limits.reserve_help')}
+              ? t('quota_management.usage_limits.reserve_invalid', { max: reserveMax })
+              : t('quota_management.usage_limits.reserve_help')}
           </p>
         </section>
 
         <section className={styles.section}>
           <div className={styles.sectionHead}>
-            <span className={styles.sectionTitle}>{t('codex_quota.limits.pacing_label')}</span>
+            <span className={styles.sectionTitle}>
+              {t('quota_management.usage_limits.pacing_label')}
+            </span>
             <EffectiveChip
               value={toggleLabel(policy.dailyPacing, t)}
               inherited={policy.pacingInherited}
             />
           </div>
           <Segmented
-            label={t('codex_quota.limits.pacing_label')}
+            label={t('quota_management.usage_limits.pacing_label')}
             value={pacingChoice}
             disabled={saving}
             options={[
               {
                 value: 'default',
-                label: t('codex_quota.limits.use_default', {
+                label: t('quota_management.usage_limits.use_default', {
                   value: toggleLabel(defaults.dailyPacing, t),
                 }),
               },
@@ -324,7 +350,7 @@ function CodexUsageLimitsDialog({
             ]}
             onChange={setPacingChoice}
           />
-          <p className={styles.help}>{t('codex_quota.limits.pacing_help')}</p>
+          <p className={styles.help}>{t('quota_management.usage_limits.pacing_help')}</p>
         </section>
 
         <UsageLimitPreview
@@ -345,8 +371,8 @@ function EffectiveChip({ value, inherited }: { value: string; inherited: boolean
       <span className={styles.effectiveValue}>{value}</span>
       <span className={styles.effectiveSource}>
         {inherited
-          ? t('codex_quota.limits.source_default')
-          : t('codex_quota.limits.source_account')}
+          ? t('quota_management.usage_limits.source_default')
+          : t('quota_management.usage_limits.source_account')}
       </span>
     </span>
   );
@@ -393,28 +419,28 @@ function UsageLimitPreview({
   nowMs,
   locale,
 }: {
-  policy: CodexUsageLimitPolicy;
-  quota?: CodexQuotaState;
+  policy: UsageLimitPolicy;
+  quota?: UsageLimitQuota;
   nowMs: number;
   locale?: string;
 }) {
   const { t } = useTranslation();
-  const markersFor = useCodexMeterMarkers(policy, nowMs);
+  const markersFor = useUsageLimitMarkers(policy, nowMs);
   const windows = quota?.status === 'success' ? (quota.windows ?? []) : [];
-  const pacedWindow = pickCodexPacedWindow(windows);
-  const pace = pacedWindow ? computeCodexDailyPace(pacedWindow, policy, nowMs) : null;
-  const reserveHits = windows.filter((window) => isCodexReserveReached(window, policy));
+  const pacedWindow = pickPacedWindow(policy.provider, windows);
+  const pace = pacedWindow ? computeDailyPace(pacedWindow, policy, nowMs) : null;
+  const reserveHits = windows.filter((window) => isReserveReached(window, policy));
   const windowLabel = (window: (typeof windows)[number]) =>
     window.labelKey ? t(window.labelKey, window.labelParams ?? {}) : window.label;
 
   const lines: { key: string; text: string; warn?: boolean }[] = [];
-  if (!isCodexUsageLimitActive(policy)) {
-    lines.push({ key: 'inactive', text: t('codex_quota.limits.preview_inactive') });
+  if (!isUsageLimitActive(policy)) {
+    lines.push({ key: 'inactive', text: t('quota_management.usage_limits.preview_inactive') });
   }
   if (policy.reservePercent > 0) {
     lines.push({
       key: 'reserve',
-      text: t('codex_quota.limits.preview_keeps_free', {
+      text: t('quota_management.usage_limits.preview_keeps_free', {
         value: formatLimitPercent(policy.reservePercent),
       }),
     });
@@ -423,7 +449,7 @@ function UsageLimitPreview({
     lines.push({
       key: `reserve-hit-${window.id}`,
       warn: true,
-      text: t('codex_quota.limits.preview_reserve_reached', {
+      text: t('quota_management.usage_limits.preview_reserve_reached', {
         window: windowLabel(window),
         remaining: formatLimitPercent(100 - (window.usedPercent ?? 0)),
       }),
@@ -434,7 +460,7 @@ function UsageLimitPreview({
       lines.push({
         key: 'pace',
         warn: pace.reached,
-        text: t('codex_quota.limits.preview_today', {
+        text: t('quota_management.usage_limits.preview_today', {
           used: formatLimitPercent(pace.usedPercent ?? 0),
           allowed: formatLimitPercent(pace.allowedUsedPercent),
           day: pace.day,
@@ -446,28 +472,29 @@ function UsageLimitPreview({
         lines.push({
           key: 'pace-reached',
           warn: true,
-          text: t('codex_quota.limits.preview_pace_reached', {
+          text: t('quota_management.usage_limits.preview_pace_reached', {
             time: nextDay.relative ?? nextDay.absolute,
           }),
         });
       }
       lines.push({
         key: 'pace-share',
-        text: t('codex_quota.limits.preview_daily_share', {
+        text: t('quota_management.usage_limits.preview_daily_share', {
           share: formatLimitPercent(pace.dailySharePercent),
         }),
       });
     } else {
-      lines.push({ key: 'pace-missing', text: t('codex_quota.limits.preview_no_window') });
+      lines.push({
+        key: 'pace-missing',
+        text: t('quota_management.usage_limits.preview_no_window'),
+      });
     }
   }
 
   const meterWindow =
-    pacedWindow ?? windows.find((window) => isCodexUsageLimitWindow(window.id)) ?? null;
+    pacedWindow ?? windows.find((window) => isUsageLimitWindow(policy.provider, window.id)) ?? null;
   const remaining =
-    meterWindow?.usedPercent == null
-      ? null
-      : Math.max(0, Math.min(100, 100 - meterWindow.usedPercent));
+    meterWindow?.usedPercent == null ? null : clampPercent(100 - meterWindow.usedPercent);
   const markers = meterWindow ? markersFor(meterWindow) : [];
   const levelClass =
     remaining === null
@@ -481,13 +508,15 @@ function UsageLimitPreview({
   return (
     <section className={styles.preview} aria-live="polite">
       <div className={styles.previewHead}>
-        <span className={styles.sectionTitle}>{t('codex_quota.limits.preview_title')}</span>
+        <span className={styles.sectionTitle}>
+          {t('quota_management.usage_limits.preview_title')}
+        </span>
         {meterWindow && (
           <span className={styles.previewWindow}>
             {windowLabel(meterWindow)}
             {remaining !== null && (
               <span className={styles.previewPercent}>
-                {t('codex_quota.limits.preview_remaining', {
+                {t('quota_management.usage_limits.preview_remaining', {
                   value: formatLimitPercent(remaining),
                 })}
               </span>

@@ -218,6 +218,7 @@ export function getVisualConfigValidationErrors(
     maxRetryInterval: getIntegerError(values.maxRetryInterval),
     authAutoRefreshWorkers: getIntegerError(values.authAutoRefreshWorkers),
     quotaCodexReservePercent: getPercentError(values.quotaCodexReservePercent),
+    quotaClaudeReservePercent: getPercentError(values.quotaClaudeReservePercent),
     'streaming.keepaliveSeconds': getIntegerError(values.streaming.keepaliveSeconds),
     'streaming.bootstrapRetries': getIntegerError(values.streaming.bootstrapRetries),
     'streaming.nonstreamKeepaliveInterval': getIntegerError(
@@ -1274,6 +1275,8 @@ function getNextDirtyFields(
       'quotaSwitchPreviewModel',
       'quotaCodexReservePercent',
       'quotaCodexDailyPacing',
+      'quotaClaudeReservePercent',
+      'quotaClaudeDailyPacing',
       'quotaAntigravityCredits',
       'routingStrategy',
       'routingSessionAffinity',
@@ -1558,6 +1561,8 @@ function parseVisualValuesFromYaml(yamlContent: string): VisualConfigValues {
     ),
     quotaCodexReservePercent: String(quotaExceeded?.['codex-reserve-percent'] ?? ''),
     quotaCodexDailyPacing: Boolean(quotaExceeded?.['codex-daily-pacing'] ?? false),
+    quotaClaudeReservePercent: String(quotaExceeded?.['claude-reserve-percent'] ?? ''),
+    quotaClaudeDailyPacing: Boolean(quotaExceeded?.['claude-daily-pacing'] ?? false),
     quotaAntigravityCredits: Boolean(antigravity?.['antigravity-credits'] ?? false),
 
     routingStrategy: parseRoutingStrategy(routing?.strategy),
@@ -2012,6 +2017,8 @@ export function useVisualConfig() {
           dirtyFields.has('quotaSwitchPreviewModel') ||
           dirtyFields.has('quotaCodexReservePercent') ||
           dirtyFields.has('quotaCodexDailyPacing') ||
+          dirtyFields.has('quotaClaudeReservePercent') ||
+          dirtyFields.has('quotaClaudeDailyPacing') ||
           dirtyFields.has('quotaAntigravityCredits');
         if (quotaDirty) {
           ensureMapInDoc(doc, ['quota-exceeded']);
@@ -2030,6 +2037,16 @@ export function useVisualConfig() {
           }
           if (dirtyFields.has('quotaCodexDailyPacing')) {
             doc.setIn(['quota-exceeded', 'codex-daily-pacing'], values.quotaCodexDailyPacing);
+          }
+          if (dirtyFields.has('quotaClaudeReservePercent')) {
+            setNumberFromStringInDoc(
+              doc,
+              ['quota-exceeded', 'claude-reserve-percent'],
+              values.quotaClaudeReservePercent
+            );
+          }
+          if (dirtyFields.has('quotaClaudeDailyPacing')) {
+            doc.setIn(['quota-exceeded', 'claude-daily-pacing'], values.quotaClaudeDailyPacing);
           }
           if (dirtyFields.has('quotaAntigravityCredits')) {
             doc.setIn(

@@ -147,7 +147,7 @@ export function QuotaPage() {
     }
   }, [connectionStatus, sessionGeneration]);
 
-  // Codex rows resolve usage-limit defaults from the config store (TTL-cached, deduplicated).
+  // Codex / Claude rows resolve usage-limit defaults from the config store (TTL-cached, deduplicated).
   const fetchConfig = useConfigStore((state) => state.fetchConfig);
   useEffect(() => {
     if (connectionStatus !== 'connected') return;

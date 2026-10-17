@@ -1,6 +1,6 @@
-@use '../../../../styles/mixins' as *;
+@use '../../../styles/mixins' as *;
 
-/* Codex usage-limits dialog (CodexUsageLimits.tsx). */
+/* Usage-limits dialog (UsageLimitsAction.tsx), shared by Codex and Claude. */
 
 .body {
   display: flex;

@@ -5,8 +5,9 @@ import i18n from '@/i18n';
 import { QuotaRowCells } from '@/features/quota/components/QuotaRowCells';
 import { QuotaMeter } from '@/features/quota/components/QuotaMeter';
 import { CodexQuotaBody } from '@/features/quota/providers/codex/CodexQuotaBody';
+import { ClaudeQuotaBody } from '@/features/quota/providers/claude/ClaudeQuotaBody';
 import { QUOTA_CLASS_KEYS, bindQuotaClasses } from '@/features/quota/types';
-import type { AuthFileItem, CodexQuotaState } from '@/types';
+import type { AuthFileItem, ClaudeQuotaState, CodexQuotaState } from '@/types';
 import { DAY_MS, HOUR_MS } from '@/utils/time/durations';
 
 const classes = bindQuotaClasses(
@@ -16,7 +17,7 @@ const classes = bindQuotaClasses(
 
 // useNow() freezes to module-load time under renderToStaticMarkup, and store
 // selectors read the initial state there, so global defaults are 0 / off here
-// (inheritance is covered by codexUsageLimits.test.ts).
+// (inheritance is covered by usageLimits.test.ts).
 const now = Date.now();
 
 const quota: CodexQuotaState = {
@@ -111,5 +112,64 @@ describe('Codex usage-limit pause', () => {
     };
     const markup = renderToStaticMarkup(createElement(CodexQuotaBody, { quota, classes, file }));
     expect(markup).not.toContain('codexUsageLimitPause');
+  });
+});
+
+describe('Claude usage limits', () => {
+  const claudeQuota: ClaudeQuotaState = {
+    status: 'success',
+    windows: [
+      {
+        id: 'five-hour',
+        label: '5-hour session',
+        usedPercent: 30,
+        resetLabel: '-',
+        resetAtMs: now + 2 * HOUR_MS,
+        periodHours: 5,
+      },
+      {
+        id: 'seven-day',
+        label: 'Weekly',
+        usedPercent: 20,
+        resetLabel: '-',
+        // Day 3 of 7.
+        resetAtMs: now + 4 * DAY_MS + 12 * HOUR_MS,
+        periodHours: 168,
+      },
+      {
+        id: 'seven-day-opus',
+        label: 'Weekly Opus',
+        usedPercent: 50,
+        resetLabel: '-',
+        resetAtMs: now + 4 * DAY_MS,
+        periodHours: 168,
+      },
+    ],
+  };
+  const file: AuthFileItem = {
+    name: 'claude-a.json',
+    quotaReservePercent: 16,
+    quotaDailyPacing: true,
+    usageLimitPausedUntilMs: now + 2 * HOUR_MS,
+    usageLimitReason: 'daily pace reached',
+  };
+
+  test('row cells tick the session and weekly windows only', () => {
+    const markup = renderToStaticMarkup(
+      createElement(QuotaRowCells, { type: 'claude', quota: claudeQuota, file })
+    );
+    // Session: reserve; weekly: reserve + pace; Opus: none.
+    expect(markerCount(markup)).toBe(3);
+    expect(markup).toContain('left:64%');
+    expect(markup).toContain('day 3 of 7');
+  });
+
+  test('the card body shows ticks and the pause line', () => {
+    const markup = renderToStaticMarkup(
+      createElement(ClaudeQuotaBody, { quota: claudeQuota, classes, file })
+    );
+    expect(markerCount(markup)).toBe(3);
+    expect(markup).toContain('class="codexUsageLimitPause"');
+    expect(markup).toContain('title="daily pace reached"');
   });
 });
