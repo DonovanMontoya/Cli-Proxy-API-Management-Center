@@ -35,6 +35,7 @@ export type VisualConfigFieldPath =
   | 'maxRetryCredentials'
   | 'maxRetryInterval'
   | 'authAutoRefreshWorkers'
+  | 'quotaCodexReservePercent'
   | 'streaming.keepaliveSeconds'
   | 'streaming.bootstrapRetries'
   | 'streaming.nonstreamKeepaliveInterval';
@@ -53,7 +54,8 @@ export type VisualConfigValidationErrorCode =
   | 'port_range'
   | 'integer'
   | 'non_negative_integer'
-  | 'integer_range_1_3600';
+  | 'integer_range_1_3600'
+  | 'percent_range';
 
 export type VisualConfigValidationErrors = Partial<
   Record<VisualConfigFieldPath, VisualConfigValidationErrorCode>
@@ -189,6 +191,9 @@ export type VisualConfigValues = {
   authAutoRefreshWorkers: string;
   quotaSwitchProject: boolean;
   quotaSwitchPreviewModel: boolean;
+  /** quota-exceeded.codex-reserve-percent; empty leaves the key out (backend default 0). */
+  quotaCodexReservePercent: string;
+  quotaCodexDailyPacing: boolean;
   /** OAuth-only: oauth.providers.antigravity.antigravity-credits. */
   quotaAntigravityCredits: boolean;
   routingStrategy: RoutingStrategy;
@@ -293,6 +298,8 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
   authAutoRefreshWorkers: '',
   quotaSwitchProject: false,
   quotaSwitchPreviewModel: false,
+  quotaCodexReservePercent: '',
+  quotaCodexDailyPacing: false,
   quotaAntigravityCredits: false,
   routingStrategy: 'round-robin',
   routingSessionAffinity: false,

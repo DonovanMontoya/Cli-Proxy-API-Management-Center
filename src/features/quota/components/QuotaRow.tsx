@@ -10,12 +10,15 @@
  * - loading: ghost cells (aria-busy, visually hidden text equivalent);
  * - error: inline failure text, refresh retries;
  * - success: the provider body.
+ *
+ * Codex rows also carry the usage-limits action and, while the proxy holds the
+ * credential back, a "paused" badge under the name.
  */
 
 import { useTranslation } from 'react-i18next';
 import { IconRefreshCw } from '@/components/ui/icons';
-import type { ResolvedTheme } from '@/types';
-import { resolveQuotaErrorMessage } from '@/utils/quota';
+import type { CodexQuotaState, ResolvedTheme } from '@/types';
+import { buildResetDisplay, resolveQuotaErrorMessage } from '@/utils/quota';
 import {
   getAuthFileIcon,
   getThemeSurfaceIconBackground,
@@ -26,6 +29,8 @@ import { bindQuotaClasses, type QuotaClassMap } from '../types';
 import { QUOTA_ADAPTERS, type QuotaCardState } from '../providers';
 import { isQuotaRefreshDisabled, type QuotaFileEntry } from '../logic';
 import type { ModelRestriction } from '../modelAccess';
+import { CodexUsageLimitsAction } from '../providers/codex/CodexUsageLimits';
+import { readCodexUsageLimitPause } from '../providers/codex/usageLimits';
 import { useNow } from '@/hooks/useNow';
 import { QuotaRowCells } from './QuotaRowCells';
 import { hasRowCells, rowSubtitleParts } from './rowCellModel';
@@ -52,6 +57,7 @@ const ROW_PLACEMENT_KEYS = [
   'codexPlan',
   'codexResetCredits',
   'codexResetCreditsError',
+  'codexUsageLimitPause',
   'quotaResetRelativeSoon',
 ] as const satisfies readonly (keyof QuotaClassMap)[];
 
@@ -84,6 +90,10 @@ export type QuotaRowProps = {
   resetting: boolean;
   onRefresh: () => void;
   onReset: () => void;
+  /** Codex only: whether the usage-limits dialog can save right now. */
+  canEditUsageLimits?: boolean;
+  /** Codex only: reloads the credential list after usage limits are saved. */
+  onUsageLimitsSaved?: () => void | Promise<void>;
 };
 
 export function QuotaRow(props: QuotaRowProps) {
@@ -98,6 +108,8 @@ export function QuotaRow(props: QuotaRowProps) {
     resetting,
     onRefresh,
     onReset,
+    canEditUsageLimits = false,
+    onUsageLimitsSaved,
   } = props;
   const { t, i18n } = useTranslation();
   const now = useNow();
@@ -106,6 +118,11 @@ export function QuotaRow(props: QuotaRowProps) {
   const visibleRestrictions = restrictions.filter(
     (restriction) => !(entry.type === 'claude' && restriction.model === 'Fable 5.1')
   );
+  const isCodex = entry.type === 'codex';
+  const usageLimitPause = isCodex ? readCodexUsageLimitPause(entry.file, now) : null;
+  const usageLimitPauseDisplay = usageLimitPause
+    ? buildResetDisplay(null, usageLimitPause.untilMs, now, i18n.resolvedLanguage)
+    : null;
 
   const status = quota?.status ?? 'idle';
   const loading = status === 'loading';
@@ -147,7 +164,7 @@ export function QuotaRow(props: QuotaRowProps) {
             {displayName}
           </span>
         </div>
-        {(subtitle.length > 0 || visibleRestrictions.length > 0) && (
+        {(subtitle.length > 0 || visibleRestrictions.length > 0 || usageLimitPauseDisplay) && (
           <div className={styles.subtitle}>
             {subtitle.length > 0 && (
               <span className={styles.subtitleText} title={subtitle.join(' · ')}>
@@ -168,6 +185,23 @@ export function QuotaRow(props: QuotaRowProps) {
                 {t('quota_management.model_restricted', { model: restriction.model })}
               </span>
             ))}
+            {usageLimitPause && usageLimitPauseDisplay && (
+              <span
+                className={styles.usageLimitBadge}
+                title={[
+                  t('codex_quota.limits.paused_until', {
+                    time: usageLimitPauseDisplay.absolute,
+                  }),
+                  usageLimitPause.reason,
+                ]
+                  .filter(Boolean)
+                  .join('\n')}
+              >
+                {t('codex_quota.limits.paused_badge', {
+                  time: usageLimitPauseDisplay.relative ?? usageLimitPauseDisplay.absolute,
+                })}
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -198,13 +232,23 @@ export function QuotaRow(props: QuotaRowProps) {
             {t(`${adapter.i18nPrefix}.load_failed`, { message: errorMessage })}
           </div>
         ) : quota && hasRowCells(entry.type) ? (
-          <QuotaRowCells type={entry.type} quota={quota} />
+          <QuotaRowCells type={entry.type} quota={quota} file={entry.file} />
         ) : quota ? (
-          <adapter.Body quota={quota} classes={rowQuotaClasses} />
+          <adapter.Body quota={quota} classes={rowQuotaClasses} file={entry.file} />
         ) : null}
       </div>
 
       <div className={styles.actions}>
+        {isCodex && onUsageLimitsSaved && (
+          <CodexUsageLimitsAction
+            file={entry.file}
+            displayName={displayName}
+            quota={quota as CodexQuotaState | undefined}
+            disabled={!canEditUsageLimits}
+            onSaved={onUsageLimitsSaved}
+            className={styles.actionButton}
+          />
+        )}
         {showReset && (
           <button
             type="button"

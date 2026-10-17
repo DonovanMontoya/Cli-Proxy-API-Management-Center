@@ -338,6 +338,17 @@ button.quotaMessageAction {
   overflow-wrap: anywhere;
 }
 
+.codexUsageLimitPause {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 6px;
+  font-size: $quota-font-size;
+  font-weight: 500;
+  color: var(--amber-text);
+  cursor: help;
+}
+
 @include mobile {
   .quotaRowHeader {
     flex-direction: column;

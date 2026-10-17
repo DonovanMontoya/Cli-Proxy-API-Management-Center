@@ -1,5 +1,9 @@
 /**
  * Codex quota body: plan badges, reset credits, and usage-window meters.
+ *
+ * With the credential at hand it also shows the proxy's usage limits: reserve
+ * and daily-pace ticks on the main window meters, and a line while the proxy
+ * holds the credential back.
  */
 
 import { useMemo } from 'react';
@@ -20,6 +24,8 @@ import { QuotaResetLabel } from '../../components/QuotaResetLabel';
 import { collectQuotaRowInstants, pickUrgentRowId, resetCreditRowId } from '../../resetSchedule';
 import type { QuotaBodyProps, QuotaClassMap } from '../../types';
 import { getCodexPlanLabel } from './planLabel';
+import { useCodexMeterMarkers, useCodexUsageLimitPolicy } from './useCodexUsageLimits';
+import { readCodexUsageLimitPause } from './usageLimits';
 
 const getPlanValueClass = (planType: string | null, classes: QuotaClassMap): string => {
   // resolvePlanTier defines the elite/premium ordering (see quotaPlanTier tests).
@@ -29,7 +35,7 @@ const getPlanValueClass = (planType: string | null, classes: QuotaClassMap): str
   return classes.codexPlanValue;
 };
 
-export function CodexQuotaBody({ quota, classes }: QuotaBodyProps<CodexQuotaState>) {
+export function CodexQuotaBody({ quota, classes, file }: QuotaBodyProps<CodexQuotaState>) {
   const { t, i18n } = useTranslation();
   const now = useNow();
   const locale = i18n.resolvedLanguage;
@@ -47,6 +53,11 @@ export function CodexQuotaBody({ quota, classes }: QuotaBodyProps<CodexQuotaStat
   const rateLimitResetCreditsAvailableCount = quota.rateLimitResetCreditsAvailableCount ?? null;
   const rateLimitResetCredits = quota.rateLimitResetCredits ?? [];
   const rateLimitResetCreditsError = quota.rateLimitResetCreditsError ?? '';
+
+  const usageLimitPolicy = useCodexUsageLimitPolicy(file);
+  const markersFor = useCodexMeterMarkers(usageLimitPolicy, now);
+  const pause = readCodexUsageLimitPause(file, now);
+  const pauseDisplay = pause ? buildResetDisplay(null, pause.untilMs, now, locale) : null;
 
   const planLabel = getCodexPlanLabel(planType, t);
   const planValueClass = getPlanValueClass(planType, classes);
@@ -105,6 +116,12 @@ export function CodexQuotaBody({ quota, classes }: QuotaBodyProps<CodexQuotaStat
               </span>
             </span>
           )}
+        </div>
+      )}
+      {pause && pauseDisplay && (
+        <div className={classes.codexUsageLimitPause} title={pause.reason || undefined}>
+          <span>{t('codex_quota.limits.paused_label')}</span>
+          <QuotaResetLabel display={pauseDisplay} classes={classes} />
         </div>
       )}
       {rateLimitResetCredits.length > 0 ? (
@@ -189,7 +206,12 @@ export function CodexQuotaBody({ quota, classes }: QuotaBodyProps<CodexQuotaStat
                   )}
                 </div>
               </div>
-              <QuotaMeter percent={remaining} classes={classes} index={index} />
+              <QuotaMeter
+                percent={remaining}
+                classes={classes}
+                index={index}
+                markers={markersFor(window)}
+              />
             </div>
           );
         })

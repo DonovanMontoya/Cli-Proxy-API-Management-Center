@@ -16,6 +16,9 @@ import { normalizeModelOptions, normalizeModelThinking } from './providerModels'
 const normalizeBoolean = (value: unknown): boolean | undefined =>
   typeof value === 'boolean' ? value : undefined;
 
+const normalizeFiniteNumber = (value: unknown): number | undefined =>
+  typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+
 const normalizeModelAliases = (models: unknown): ModelAlias[] => {
   if (!Array.isArray(models)) return [];
   return models
@@ -372,6 +375,10 @@ export const normalizeConfigResponse = (raw: unknown): Config => {
     switchPreviewModel: isRecord(quota) ? normalizeBoolean(quota['switch-preview-model']) : false,
     antigravityCredits:
       normalizeBoolean(at('oauth.providers.antigravity.antigravity-credits')) ?? false,
+    codexReservePercent: isRecord(quota)
+      ? normalizeFiniteNumber(quota['codex-reserve-percent'])
+      : 0,
+    codexDailyPacing: isRecord(quota) ? normalizeBoolean(quota['codex-daily-pacing']) : false,
   };
   config.providerGroups = isRecord(raw['api-keys']) ? raw['api-keys'] : {};
   config.geminiApiKeys = normalizeProviderGroups(at('api-keys.gemini')) as ProviderKeyConfig[];

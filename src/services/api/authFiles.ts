@@ -9,6 +9,7 @@ import type { AuthFilesResponse } from '@/types/authFile';
 import type { OAuthModelAliasEntry } from '@/types';
 import { normalizeOAuthProviderKey } from '@/utils/providerKeys';
 import { getQuotaCacheKey } from '@/utils/quota/identity';
+import { normalizeNumberValue } from '@/utils/quota/parsers';
 import {
   normalizeRecentRequestAuthIndex,
   normalizeRecentRequestBuckets,
@@ -22,6 +23,9 @@ export type AuthFileLookup = { name: string; authIndex?: string };
 type AuthFileEntry = AuthFilesResponse['files'][number];
 export type AuthFileFieldsPatch = {
   request_retry?: number | null;
+  /** Codex usage limits; null inherits the global quota-exceeded default. */
+  quota_reserve_percent?: number | null;
+  quota_daily_pacing?: boolean | null;
   model_aliases?: Array<{
     name: string;
     alias: string;
@@ -270,6 +274,11 @@ const normalizeAuthFileEntry = (
   const modified = readDateField(entry);
   const priority = readIntegerField(entry['priority']);
   const weight = readIntegerField(entry['weight']);
+  const quotaReservePercent = normalizeNumberValue(entry['quota_reserve_percent']) ?? undefined;
+  const quotaDailyPacing =
+    typeof entry['quota_daily_pacing'] === 'boolean' ? entry['quota_daily_pacing'] : undefined;
+  const usageLimitPausedUntilMs = parseTimestampMs(entry['usage_limit_paused_until']);
+  const usageLimitReason = readTextField(entry, 'usage_limit_reason');
 
   return {
     ...entry,
@@ -286,6 +295,10 @@ const normalizeAuthFileEntry = (
     ...(note ? { note } : {}),
     ...(email ? { email } : {}),
     ...(projectId ? { projectId } : {}),
+    ...(quotaReservePercent !== undefined ? { quotaReservePercent } : {}),
+    ...(quotaDailyPacing !== undefined ? { quotaDailyPacing } : {}),
+    ...(Number.isFinite(usageLimitPausedUntilMs) ? { usageLimitPausedUntilMs } : {}),
+    ...(usageLimitReason ? { usageLimitReason } : {}),
   };
 };
 

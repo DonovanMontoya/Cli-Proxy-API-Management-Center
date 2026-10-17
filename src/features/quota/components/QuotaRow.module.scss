@@ -104,7 +104,9 @@
   @include text-ellipsis;
 }
 
-.restrictedBadge {
+/* usageLimitBadge: the proxy is holding this credential back until a usage limit lifts. */
+.restrictedBadge,
+.usageLimitBadge {
   display: inline-flex;
   align-items: center;
   padding: 1px 7px;
@@ -502,6 +504,15 @@
   .actionButton:hover:not(:disabled) {
     background: var(--bg-tertiary);
     color: var(--text-primary);
+  }
+}
+
+/* A usage limit applies to this credential. */
+.actionButton[data-active='true'] {
+  color: var(--text-secondary);
+
+  svg {
+    color: var(--primary-color);
   }
 }
 

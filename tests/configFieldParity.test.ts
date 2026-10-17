@@ -145,6 +145,8 @@ describe('v8 YAML search paths', () => {
     ['routingStrategy', 'routing.strategy'],
     ['quotaSwitchProject', 'quota-exceeded.switch-project'],
     ['quotaSwitchPreviewModel', 'quota-exceeded.switch-preview-model'],
+    ['quotaCodexReservePercent', 'quota-exceeded.codex-reserve-percent'],
+    ['quotaCodexDailyPacing', 'quota-exceeded.codex-daily-pacing'],
     ['quotaAntigravityCredits', 'oauth.providers.antigravity.antigravity-credits'],
     ['wsAuth', 'oauth.providers.aistudio.ws-auth'],
     ['codexHeaderUserAgent', 'oauth.providers.codex.header-defaults.user-agent'],

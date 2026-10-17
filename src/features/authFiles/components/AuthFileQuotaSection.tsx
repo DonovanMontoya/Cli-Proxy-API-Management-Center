@@ -209,7 +209,7 @@ export function AuthFileQuotaSection(props: AuthFileQuotaSectionProps) {
           })}
         </div>
       ) : quota ? (
-        <adapter.Body quota={quota} classes={compactQuotaClasses} />
+        <adapter.Body quota={quota} classes={compactQuotaClasses} file={file} />
       ) : (
         <div className={styles.quotaMessage}>{t(`${adapter.i18nPrefix}.idle`)}</div>
       )}

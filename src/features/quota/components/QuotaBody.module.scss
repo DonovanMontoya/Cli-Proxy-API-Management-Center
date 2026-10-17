@@ -293,6 +293,22 @@
   padding: $spacing-xs $spacing-sm;
 }
 
+/* Usage-limit pause: the proxy is holding this credential back on purpose. */
+.codexUsageLimitPause {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--amber-text);
+  background-color: var(--amber-10);
+  border: 1px solid var(--amber-30);
+  border-radius: $radius-sm;
+  padding: $spacing-xs $spacing-sm;
+  cursor: help;
+}
+
 .codexPlanSeparator {
   width: 1px;
   height: 12px;

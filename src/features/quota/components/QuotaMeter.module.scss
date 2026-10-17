@@ -1,0 +1,34 @@
+/* Threshold ticks over a quota meter (QuotaMeterMarkers).
+ *
+ * Host tracks clip their fill with overflow: hidden; the doubled class lets a
+ * marker-carrying track overhang its ticks without touching the host skins.
+ * The fill keeps its own radius, so nothing visible depends on the clip. */
+
+.markerHost.markerHost {
+  position: relative;
+  overflow: visible;
+}
+
+.marker {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--text-secondary);
+  /* A halo keeps the tick readable over any fill colour. */
+  box-shadow: 0 0 0 1px var(--bg-primary);
+  transform: translateX(-50%);
+  cursor: help;
+
+  /* A 2px tick is too thin to hover; widen the hit area invisibly. */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -2px -5px;
+  }
+}
+
+.markerCritical {
+  background: var(--viz-failure);
+}

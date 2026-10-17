@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { parse as parseYaml } from 'yaml';
+import { getVisualConfigValidationErrors } from '@/hooks/useVisualConfig';
+import { DEFAULT_VISUAL_VALUES } from '@/types/visualConfig';
 import { runVisualConfig } from './helpers/visualConfig';
 
 // Backend contract: config_load.go defaults WebsocketAuth to true; QuotaExceeded
@@ -101,5 +103,50 @@ oauth:
       server: { port: 8317 },
       observability: { logs: { debug: true } },
     });
+  });
+});
+
+describe('Codex usage-limit defaults', () => {
+  test('missing keys read as off and do not materialize on unrelated edits', () => {
+    const yaml = 'server:\n  port: 8317\n';
+    const config = runVisualConfig(yaml, [{ debug: true }]);
+    expect(config.visualValues.quotaCodexReservePercent).toBe('');
+    expect(config.visualValues.quotaCodexDailyPacing).toBe(false);
+    expect(parseYaml(config.applyVisualChangesToYaml(yaml))).not.toHaveProperty('quota-exceeded');
+  });
+
+  test('round-trips explicit values', () => {
+    const yaml = `quota-exceeded:
+  switch-project: true
+  codex-reserve-percent: 11.5
+  codex-daily-pacing: true
+`;
+    const config = runVisualConfig(yaml);
+    expect(config.visualValues.quotaCodexReservePercent).toBe('11.5');
+    expect(config.visualValues.quotaCodexDailyPacing).toBe(true);
+    expect(parseYaml(config.applyVisualChangesToYaml(yaml))).toEqual(parseYaml(yaml));
+  });
+
+  test('writes numbers, and clearing the reserve removes the key', () => {
+    const yaml = 'quota-exceeded:\n  codex-reserve-percent: 5\n';
+    const set = runVisualConfig(yaml, [
+      { quotaCodexReservePercent: '12', quotaCodexDailyPacing: true },
+    ]);
+    expect(parseYaml(set.applyVisualChangesToYaml(yaml))).toEqual({
+      'quota-exceeded': { 'codex-reserve-percent': 12, 'codex-daily-pacing': true },
+    });
+
+    const cleared = runVisualConfig(yaml, [{ quotaCodexReservePercent: '' }]);
+    expect(parseYaml(cleared.applyVisualChangesToYaml(yaml))).toEqual({});
+  });
+
+  test('validates the reserve as a 0-100 percentage', () => {
+    const errorFor = (quotaCodexReservePercent: string) =>
+      getVisualConfigValidationErrors({ ...DEFAULT_VISUAL_VALUES, quotaCodexReservePercent })
+        .quotaCodexReservePercent;
+    for (const valid of ['', '0', '11.5', '100']) expect(errorFor(valid)).toBeUndefined();
+    for (const invalid of ['-1', '101', 'abc', '1e2']) {
+      expect(errorFor(invalid)).toBe('percent_range');
+    }
   });
 });

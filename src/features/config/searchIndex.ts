@@ -533,6 +533,22 @@ export const CONFIG_FIELD_SEARCH_INDEX: ConfigFieldSearchEntry[] = [
     yamlKeys: ['quota-exceeded', 'switch-preview-model'],
   },
   {
+    fieldId: 'quotaCodexReservePercent',
+    sectionId: 'quota',
+    labelKey: L('sections.quota.codex_reserve_percent'),
+    hintKey: L('sections.quota.codex_reserve_percent_desc'),
+    yamlKeys: ['quota-exceeded', 'codex-reserve-percent'],
+    keywords: ['codex', 'usage limit', 'reserve'],
+  },
+  {
+    fieldId: 'quotaCodexDailyPacing',
+    sectionId: 'quota',
+    labelKey: L('sections.quota.codex_daily_pacing'),
+    hintKey: L('sections.quota.codex_daily_pacing_desc'),
+    yamlKeys: ['quota-exceeded', 'codex-daily-pacing'],
+    keywords: ['codex', 'usage limit', 'weekly', 'pace'],
+  },
+  {
     fieldId: 'quotaAntigravityCredits',
     sectionId: 'quota',
     labelKey: L('sections.quota.antigravity_credits'),
