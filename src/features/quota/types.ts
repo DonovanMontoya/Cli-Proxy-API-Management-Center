@@ -7,6 +7,8 @@
  * 初始化时抛错并列出缺失清单，替代旧字符串 styleMap 的静默 class="undefined"。
  */
 
+import type { AuthFileItem } from '@/types';
+
 export interface QuotaClassMap {
   // 额度行（五个提供商共用）
   quotaRow: string;
@@ -35,6 +37,8 @@ export interface QuotaClassMap {
   codexResetCreditLabel: string;
   codexResetCreditTime: string;
   codexResetCreditsError: string;
+  // Codex usage-limit pause line
+  codexUsageLimitPause: string;
   // Antigravity 分组
   antigravityQuotaGroup: string;
   antigravityQuotaGroupHeader: string;
@@ -72,6 +76,7 @@ export const QUOTA_CLASS_KEYS: readonly (keyof QuotaClassMap)[] = [
   'codexResetCreditLabel',
   'codexResetCreditTime',
   'codexResetCreditsError',
+  'codexUsageLimitPause',
   'antigravityQuotaGroup',
   'antigravityQuotaGroupHeader',
   'antigravityQuotaGroupTitle',
@@ -99,4 +104,6 @@ export function bindQuotaClasses(module: Record<string, string>, source: string)
 export interface QuotaBodyProps<TState> {
   quota: TState;
   classes: QuotaClassMap;
+  /** The credential behind the quota, for bodies that read per-credential settings. */
+  file?: AuthFileItem;
 }

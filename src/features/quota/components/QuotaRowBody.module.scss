@@ -83,7 +83,8 @@
    keep the same column positions on every row. */
 .codexPlan,
 .codexResetCredits,
-.codexResetCreditsError {
+.codexResetCreditsError,
+.codexUsageLimitPause {
   grid-column: 1 / -1;
 }
 

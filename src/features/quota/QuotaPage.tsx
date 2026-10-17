@@ -21,6 +21,7 @@ import { useNow } from '@/hooks/useNow';
 import { useRevealGroup } from '@/hooks/motion';
 import {
   useAuthStore,
+  useConfigStore,
   useMaskPii,
   usePrivacyStore,
   useQuotaStore,
@@ -126,6 +127,32 @@ export function QuotaPage() {
   }, [connectionStatus, sessionGeneration, t]);
 
   useHeaderRefresh(loadFiles);
+
+  /** Re-reads the list in place (no skeleton) after a row edits credential fields. */
+  const reloadFilesQuietly = useCallback(async () => {
+    if (connectionStatus !== 'connected') return;
+    // Not bumping the request id: a full reload already in flight still owns `loading`,
+    // and any reload started after this one supersedes it.
+    const requestId = listRequestRef.current;
+    try {
+      const data = await authFilesApi.list();
+      if (
+        requestId !== listRequestRef.current ||
+        sessionGeneration !== useQuotaStore.getState().cacheGeneration
+      )
+        return;
+      setFiles(data?.files || []);
+    } catch {
+      // The edit itself succeeded; the next full refresh reports list errors.
+    }
+  }, [connectionStatus, sessionGeneration]);
+
+  // Codex rows resolve usage-limit defaults from the config store (TTL-cached, deduplicated).
+  const fetchConfig = useConfigStore((state) => state.fetchConfig);
+  useEffect(() => {
+    if (connectionStatus !== 'connected') return;
+    fetchConfig().catch(() => undefined);
+  }, [connectionStatus, fetchConfig]);
 
   useEffect(() => {
     void loadFiles();
@@ -514,6 +541,8 @@ export function QuotaPage() {
                       resetting={resettingQuotaName === getQuotaCacheKey(entry.file)}
                       onRefresh={() => void refreshQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
                       onReset={() => resetQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
+                      canEditUsageLimits={canUseActions}
+                      onUsageLimitsSaved={reloadFilesQuietly}
                     />
                   ))}
                 </ul>

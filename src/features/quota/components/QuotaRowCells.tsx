@@ -10,14 +10,23 @@
 import { useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IconInfo } from '@/components/ui/icons';
-import type { ClaudeQuotaState, CodexQuotaState } from '@/types';
+import type { AuthFileItem, ClaudeQuotaState, CodexQuotaState } from '@/types';
 import { buildResetDisplay, formatInstantShort, parseIsoToMs } from '@/utils/quota';
 import { resolveTimeZoneLabel } from '@/utils/time/timezone';
 import { useNow } from '@/hooks/useNow';
-import { QUOTA_PROGRESS_HIGH_THRESHOLD, QUOTA_PROGRESS_MEDIUM_THRESHOLD } from './QuotaMeter';
+import {
+  QUOTA_PROGRESS_HIGH_THRESHOLD,
+  QUOTA_PROGRESS_MEDIUM_THRESHOLD,
+  QuotaMeterMarkers,
+} from './QuotaMeter';
+import { withMarkerHost, type QuotaMeterMarker } from './meterMarkers';
 import { collectQuotaRowInstants, pickUrgentRowId, resetCreditRowId } from '../resetSchedule';
 import { restrictedModelsFor } from '../modelAccess';
 import type { QuotaProviderType } from '../providers/types';
+import {
+  useCodexMeterMarkers,
+  useCodexUsageLimitPolicy,
+} from '../providers/codex/useCodexUsageLimits';
 import styles from './QuotaRow.module.scss';
 
 const levelClass = (remaining: number | null): string => {
@@ -43,12 +52,15 @@ function WindowCell({
   nowMs,
   unavailable = false,
   muted = false,
+  markers,
 }: {
   window: WindowLike;
   soon: boolean;
   nowMs: number;
   unavailable?: boolean;
   muted?: boolean;
+  /** Threshold ticks over the meter (Codex usage limits). */
+  markers?: readonly QuotaMeterMarker[];
 }) {
   const { t, i18n } = useTranslation();
   const used = window.usedPercent;
@@ -82,11 +94,12 @@ function WindowCell({
           {remaining === null ? '--' : `${Math.round(remaining)}%`}
         </span>
       </div>
-      <div className={styles.meter}>
+      <div className={withMarkerHost(styles.meter, markers)}>
         <div
           className={`${styles.meterFill} ${levelClass(remaining)}`}
           style={{ width: `${remaining ?? 0}%` }}
         />
+        <QuotaMeterMarkers markers={markers} />
       </div>
       <div className={styles.cellFoot}>
         {reset ? (
@@ -211,9 +224,20 @@ function ResetCreditsCell({
   );
 }
 
-export function QuotaRowCells({ type, quota }: { type: QuotaProviderType; quota: unknown }) {
+export function QuotaRowCells({
+  type,
+  quota,
+  file,
+}: {
+  type: QuotaProviderType;
+  quota: unknown;
+  /** The credential behind the quota; Codex reads its usage-limit overrides. */
+  file?: AuthFileItem;
+}) {
   const { t } = useTranslation();
   const now = useNow();
+  const usageLimitPolicy = useCodexUsageLimitPolicy(type === 'codex' ? file : undefined);
+  const markersFor = useCodexMeterMarkers(usageLimitPolicy, now);
   const urgentRowId = useMemo(
     () => pickUrgentRowId(collectQuotaRowInstants(type, quota), now),
     [type, quota, now]
@@ -272,6 +296,7 @@ export function QuotaRowCells({ type, quota }: { type: QuotaProviderType; quota:
               .trim()
               .toLowerCase() === 'gpt-reserve'
           }
+          markers={markersFor(window)}
         />
       ))}
       {(resetCount != null || credits.length > 0 || codex.rateLimitResetCreditsError) && (

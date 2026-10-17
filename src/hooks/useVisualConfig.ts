@@ -124,6 +124,16 @@ function setIntFromStringInDoc(doc: YamlDocument, path: YamlPath, value: unknown
   }
 }
 
+function setNumberFromStringInDoc(doc: YamlDocument, path: YamlPath, value: unknown): void {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+  if (trimmed === '') {
+    if (docHas(doc, path)) deletePathInDoc(doc, path);
+    return;
+  }
+  const parsed = Number(trimmed);
+  if (Number.isFinite(parsed)) doc.setIn(path, parsed);
+}
+
 function setDisableImageGenerationInDoc(
   doc: YamlDocument,
   path: YamlPath,
@@ -175,6 +185,15 @@ function getPortError(value: string): 'port_range' | undefined {
   return parsed >= 1 && parsed <= 65535 ? undefined : 'port_range';
 }
 
+function getPercentError(value: string): 'percent_range' | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number(trimmed);
+  return /^\d+(\.\d+)?$/.test(trimmed) && parsed >= 0 && parsed <= 100
+    ? undefined
+    : 'percent_range';
+}
+
 function getRedisRetentionError(value: string): 'integer_range_1_3600' | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
@@ -198,6 +217,7 @@ export function getVisualConfigValidationErrors(
     maxRetryCredentials: getIntegerError(values.maxRetryCredentials),
     maxRetryInterval: getIntegerError(values.maxRetryInterval),
     authAutoRefreshWorkers: getIntegerError(values.authAutoRefreshWorkers),
+    quotaCodexReservePercent: getPercentError(values.quotaCodexReservePercent),
     'streaming.keepaliveSeconds': getIntegerError(values.streaming.keepaliveSeconds),
     'streaming.bootstrapRetries': getIntegerError(values.streaming.bootstrapRetries),
     'streaming.nonstreamKeepaliveInterval': getIntegerError(
@@ -1252,6 +1272,8 @@ function getNextDirtyFields(
       'wsAuth',
       'quotaSwitchProject',
       'quotaSwitchPreviewModel',
+      'quotaCodexReservePercent',
+      'quotaCodexDailyPacing',
       'quotaAntigravityCredits',
       'routingStrategy',
       'routingSessionAffinity',
@@ -1534,6 +1556,8 @@ function parseVisualValuesFromYaml(yamlContent: string): VisualConfigValues {
     quotaSwitchPreviewModel: Boolean(
       quotaExceeded?.['switch-preview-model'] ?? DEFAULT_VISUAL_VALUES.quotaSwitchPreviewModel
     ),
+    quotaCodexReservePercent: String(quotaExceeded?.['codex-reserve-percent'] ?? ''),
+    quotaCodexDailyPacing: Boolean(quotaExceeded?.['codex-daily-pacing'] ?? false),
     quotaAntigravityCredits: Boolean(antigravity?.['antigravity-credits'] ?? false),
 
     routingStrategy: parseRoutingStrategy(routing?.strategy),
@@ -1986,6 +2010,8 @@ export function useVisualConfig() {
         const quotaDirty =
           dirtyFields.has('quotaSwitchProject') ||
           dirtyFields.has('quotaSwitchPreviewModel') ||
+          dirtyFields.has('quotaCodexReservePercent') ||
+          dirtyFields.has('quotaCodexDailyPacing') ||
           dirtyFields.has('quotaAntigravityCredits');
         if (quotaDirty) {
           ensureMapInDoc(doc, ['quota-exceeded']);
@@ -1994,6 +2020,16 @@ export function useVisualConfig() {
           }
           if (dirtyFields.has('quotaSwitchPreviewModel')) {
             doc.setIn(['quota-exceeded', 'switch-preview-model'], values.quotaSwitchPreviewModel);
+          }
+          if (dirtyFields.has('quotaCodexReservePercent')) {
+            setNumberFromStringInDoc(
+              doc,
+              ['quota-exceeded', 'codex-reserve-percent'],
+              values.quotaCodexReservePercent
+            );
+          }
+          if (dirtyFields.has('quotaCodexDailyPacing')) {
+            doc.setIn(['quota-exceeded', 'codex-daily-pacing'], values.quotaCodexDailyPacing);
           }
           if (dirtyFields.has('quotaAntigravityCredits')) {
             doc.setIn(

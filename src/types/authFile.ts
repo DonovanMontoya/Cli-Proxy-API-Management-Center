@@ -74,6 +74,12 @@ export interface AuthFileItem {
   recentRequests?: RecentRequestBucket[];
   /** Absent on older servers. Never interpreted as credential health. */
   cooldownSnapshot?: AuthFileCooldownSnapshot;
+  /** Codex usage-limit overrides; absent means the global default applies. */
+  quotaReservePercent?: number;
+  quotaDailyPacing?: boolean;
+  /** Set only while the proxy holds the credential back because of a usage limit. */
+  usageLimitPausedUntilMs?: number;
+  usageLimitReason?: string;
   [key: string]: unknown;
 }
 

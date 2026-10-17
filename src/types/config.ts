@@ -9,6 +9,9 @@ export interface QuotaExceededConfig {
   switchProject?: boolean;
   switchPreviewModel?: boolean;
   antigravityCredits?: boolean;
+  /** Codex usage limits applied to credentials without their own override. */
+  codexReservePercent?: number;
+  codexDailyPacing?: boolean;
 }
 
 export interface Config {
