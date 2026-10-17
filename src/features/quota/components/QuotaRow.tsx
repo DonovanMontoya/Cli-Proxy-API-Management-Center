@@ -11,13 +11,13 @@
  * - error: inline failure text, refresh retries;
  * - success: the provider body.
  *
- * Codex rows also carry the usage-limits action and, while the proxy holds the
- * credential back, a "paused" badge under the name.
+ * Codex and Claude rows also carry the usage-limits action and, while the
+ * proxy holds the credential back, a "paused" badge under the name.
  */
 
 import { useTranslation } from 'react-i18next';
 import { IconRefreshCw } from '@/components/ui/icons';
-import type { CodexQuotaState, ResolvedTheme } from '@/types';
+import type { ResolvedTheme } from '@/types';
 import { buildResetDisplay, resolveQuotaErrorMessage } from '@/utils/quota';
 import {
   getAuthFileIcon,
@@ -29,8 +29,8 @@ import { bindQuotaClasses, type QuotaClassMap } from '../types';
 import { QUOTA_ADAPTERS, type QuotaCardState } from '../providers';
 import { isQuotaRefreshDisabled, type QuotaFileEntry } from '../logic';
 import type { ModelRestriction } from '../modelAccess';
-import { CodexUsageLimitsAction } from '../providers/codex/CodexUsageLimits';
-import { readCodexUsageLimitPause } from '../providers/codex/usageLimits';
+import { UsageLimitsAction, type UsageLimitQuota } from '../usageLimits/UsageLimitsAction';
+import { readUsageLimitPause, usageLimitProviderOf } from '../usageLimits/model';
 import { useNow } from '@/hooks/useNow';
 import { QuotaRowCells } from './QuotaRowCells';
 import { hasRowCells, rowSubtitleParts } from './rowCellModel';
@@ -90,9 +90,9 @@ export type QuotaRowProps = {
   resetting: boolean;
   onRefresh: () => void;
   onReset: () => void;
-  /** Codex only: whether the usage-limits dialog can save right now. */
+  /** Codex / Claude: whether the usage-limits dialog can save right now. */
   canEditUsageLimits?: boolean;
-  /** Codex only: reloads the credential list after usage limits are saved. */
+  /** Codex / Claude: reloads the credential list after usage limits are saved. */
   onUsageLimitsSaved?: () => void | Promise<void>;
 };
 
@@ -118,8 +118,8 @@ export function QuotaRow(props: QuotaRowProps) {
   const visibleRestrictions = restrictions.filter(
     (restriction) => !(entry.type === 'claude' && restriction.model === 'Fable 5.1')
   );
-  const isCodex = entry.type === 'codex';
-  const usageLimitPause = isCodex ? readCodexUsageLimitPause(entry.file, now) : null;
+  const usageLimitProvider = usageLimitProviderOf(entry.type);
+  const usageLimitPause = usageLimitProvider ? readUsageLimitPause(entry.file, now) : null;
   const usageLimitPauseDisplay = usageLimitPause
     ? buildResetDisplay(null, usageLimitPause.untilMs, now, i18n.resolvedLanguage)
     : null;
@@ -189,7 +189,7 @@ export function QuotaRow(props: QuotaRowProps) {
               <span
                 className={styles.usageLimitBadge}
                 title={[
-                  t('codex_quota.limits.paused_until', {
+                  t('quota_management.usage_limits.paused_until', {
                     time: usageLimitPauseDisplay.absolute,
                   }),
                   usageLimitPause.reason,
@@ -197,7 +197,7 @@ export function QuotaRow(props: QuotaRowProps) {
                   .filter(Boolean)
                   .join('\n')}
               >
-                {t('codex_quota.limits.paused_badge', {
+                {t('quota_management.usage_limits.paused_badge', {
                   time: usageLimitPauseDisplay.relative ?? usageLimitPauseDisplay.absolute,
                 })}
               </span>
@@ -239,11 +239,12 @@ export function QuotaRow(props: QuotaRowProps) {
       </div>
 
       <div className={styles.actions}>
-        {isCodex && onUsageLimitsSaved && (
-          <CodexUsageLimitsAction
+        {usageLimitProvider && onUsageLimitsSaved && (
+          <UsageLimitsAction
+            provider={usageLimitProvider}
             file={entry.file}
             displayName={displayName}
-            quota={quota as CodexQuotaState | undefined}
+            quota={quota as UsageLimitQuota | undefined}
             disabled={!canEditUsageLimits}
             onSaved={onUsageLimitsSaved}
             className={styles.actionButton}

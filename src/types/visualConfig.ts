@@ -36,6 +36,7 @@ export type VisualConfigFieldPath =
   | 'maxRetryInterval'
   | 'authAutoRefreshWorkers'
   | 'quotaCodexReservePercent'
+  | 'quotaClaudeReservePercent'
   | 'streaming.keepaliveSeconds'
   | 'streaming.bootstrapRetries'
   | 'streaming.nonstreamKeepaliveInterval';
@@ -194,6 +195,9 @@ export type VisualConfigValues = {
   /** quota-exceeded.codex-reserve-percent; empty leaves the key out (backend default 0). */
   quotaCodexReservePercent: string;
   quotaCodexDailyPacing: boolean;
+  /** quota-exceeded.claude-reserve-percent; same empty-means-omitted rule. */
+  quotaClaudeReservePercent: string;
+  quotaClaudeDailyPacing: boolean;
   /** OAuth-only: oauth.providers.antigravity.antigravity-credits. */
   quotaAntigravityCredits: boolean;
   routingStrategy: RoutingStrategy;
@@ -300,6 +304,8 @@ export const DEFAULT_VISUAL_VALUES: VisualConfigValues = {
   quotaSwitchPreviewModel: false,
   quotaCodexReservePercent: '',
   quotaCodexDailyPacing: false,
+  quotaClaudeReservePercent: '',
+  quotaClaudeDailyPacing: false,
   quotaAntigravityCredits: false,
   routingStrategy: 'round-robin',
   routingSessionAffinity: false,

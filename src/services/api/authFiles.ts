@@ -23,7 +23,7 @@ export type AuthFileLookup = { name: string; authIndex?: string };
 type AuthFileEntry = AuthFilesResponse['files'][number];
 export type AuthFileFieldsPatch = {
   request_retry?: number | null;
-  /** Codex usage limits; null inherits the global quota-exceeded default. */
+  /** Codex / Claude usage limits; null inherits the global quota-exceeded default. */
   quota_reserve_percent?: number | null;
   quota_daily_pacing?: boolean | null;
   model_aliases?: Array<{

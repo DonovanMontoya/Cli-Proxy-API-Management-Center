@@ -23,10 +23,8 @@ import { withMarkerHost, type QuotaMeterMarker } from './meterMarkers';
 import { collectQuotaRowInstants, pickUrgentRowId, resetCreditRowId } from '../resetSchedule';
 import { restrictedModelsFor } from '../modelAccess';
 import type { QuotaProviderType } from '../providers/types';
-import {
-  useCodexMeterMarkers,
-  useCodexUsageLimitPolicy,
-} from '../providers/codex/useCodexUsageLimits';
+import { useUsageLimitMarkers, useUsageLimitPolicy } from '../usageLimits/useUsageLimits';
+import { usageLimitProviderOf } from '../usageLimits/model';
 import styles from './QuotaRow.module.scss';
 
 const levelClass = (remaining: number | null): string => {
@@ -59,7 +57,7 @@ function WindowCell({
   nowMs: number;
   unavailable?: boolean;
   muted?: boolean;
-  /** Threshold ticks over the meter (Codex usage limits). */
+  /** Threshold ticks over the meter (Codex / Claude usage limits). */
   markers?: readonly QuotaMeterMarker[];
 }) {
   const { t, i18n } = useTranslation();
@@ -231,13 +229,13 @@ export function QuotaRowCells({
 }: {
   type: QuotaProviderType;
   quota: unknown;
-  /** The credential behind the quota; Codex reads its usage-limit overrides. */
+  /** The credential behind the quota; Codex and Claude read its usage-limit overrides. */
   file?: AuthFileItem;
 }) {
   const { t } = useTranslation();
   const now = useNow();
-  const usageLimitPolicy = useCodexUsageLimitPolicy(type === 'codex' ? file : undefined);
-  const markersFor = useCodexMeterMarkers(usageLimitPolicy, now);
+  const usageLimitPolicy = useUsageLimitPolicy(usageLimitProviderOf(type), file);
+  const markersFor = useUsageLimitMarkers(usageLimitPolicy, now);
   const urgentRowId = useMemo(
     () => pickUrgentRowId(collectQuotaRowInstants(type, quota), now),
     [type, quota, now]
@@ -258,6 +256,7 @@ export function QuotaRowCells({
             soon={window.id === urgentRowId}
             nowMs={now}
             unavailable={fableUnavailable && window.id === 'seven-day-fable'}
+            markers={markersFor(window)}
           />
         ))}
         {extra && (

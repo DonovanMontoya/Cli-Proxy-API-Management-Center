@@ -549,6 +549,22 @@ export const CONFIG_FIELD_SEARCH_INDEX: ConfigFieldSearchEntry[] = [
     keywords: ['codex', 'usage limit', 'weekly', 'pace'],
   },
   {
+    fieldId: 'quotaClaudeReservePercent',
+    sectionId: 'quota',
+    labelKey: L('sections.quota.claude_reserve_percent'),
+    hintKey: L('sections.quota.claude_reserve_percent_desc'),
+    yamlKeys: ['quota-exceeded', 'claude-reserve-percent'],
+    keywords: ['claude', 'usage limit', 'reserve'],
+  },
+  {
+    fieldId: 'quotaClaudeDailyPacing',
+    sectionId: 'quota',
+    labelKey: L('sections.quota.claude_daily_pacing'),
+    hintKey: L('sections.quota.claude_daily_pacing_desc'),
+    yamlKeys: ['quota-exceeded', 'claude-daily-pacing'],
+    keywords: ['claude', 'usage limit', 'weekly', 'pace'],
+  },
+  {
     fieldId: 'quotaAntigravityCredits',
     sectionId: 'quota',
     labelKey: L('sections.quota.antigravity_credits'),

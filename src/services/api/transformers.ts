@@ -379,6 +379,10 @@ export const normalizeConfigResponse = (raw: unknown): Config => {
       ? normalizeFiniteNumber(quota['codex-reserve-percent'])
       : 0,
     codexDailyPacing: isRecord(quota) ? normalizeBoolean(quota['codex-daily-pacing']) : false,
+    claudeReservePercent: isRecord(quota)
+      ? normalizeFiniteNumber(quota['claude-reserve-percent'])
+      : 0,
+    claudeDailyPacing: isRecord(quota) ? normalizeBoolean(quota['claude-daily-pacing']) : false,
   };
   config.providerGroups = isRecord(raw['api-keys']) ? raw['api-keys'] : {};
   config.geminiApiKeys = normalizeProviderGroups(at('api-keys.gemini')) as ProviderKeyConfig[];

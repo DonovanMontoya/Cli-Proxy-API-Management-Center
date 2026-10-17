@@ -37,7 +37,7 @@ export interface QuotaClassMap {
   codexResetCreditLabel: string;
   codexResetCreditTime: string;
   codexResetCreditsError: string;
-  // Codex usage-limit pause line
+  // Usage-limit pause line (Codex, Claude)
   codexUsageLimitPause: string;
   // Antigravity 分组
   antigravityQuotaGroup: string;

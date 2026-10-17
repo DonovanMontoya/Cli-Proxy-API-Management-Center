@@ -1,5 +1,9 @@
 /**
  * Claude quota body: plan / extra usage / banked reset chips + usage window meters.
+ *
+ * With the credential at hand it also shows the proxy's usage limits: reserve
+ * and daily-pace ticks on the session and weekly meters, and a line while the
+ * proxy holds the credential back.
  */
 
 import { useMemo } from 'react';
@@ -12,8 +16,10 @@ import { QuotaMeter } from '../../components/QuotaMeter';
 import { QuotaResetLabel } from '../../components/QuotaResetLabel';
 import { collectQuotaRowInstants, pickUrgentRowId, resetCreditRowId } from '../../resetSchedule';
 import type { QuotaBodyProps } from '../../types';
+import { UsageLimitPauseLine } from '../../usageLimits/UsageLimitPauseLine';
+import { useUsageLimitMarkers, useUsageLimitPolicy } from '../../usageLimits/useUsageLimits';
 
-export function ClaudeQuotaBody({ quota, classes }: QuotaBodyProps<ClaudeQuotaState>) {
+export function ClaudeQuotaBody({ quota, classes, file }: QuotaBodyProps<ClaudeQuotaState>) {
   const { t, i18n } = useTranslation();
   const now = useNow();
   const soonestRowId = useMemo(
@@ -30,6 +36,8 @@ export function ClaudeQuotaBody({ quota, classes }: QuotaBodyProps<ClaudeQuotaSt
       : buildResetDisplay(formatInstantShort(renewsAtMs), renewsAtMs, now, i18n.resolvedLanguage);
   const resetCount = quota.rateLimitResetCreditsAvailableCount ?? null;
   const resetCredits = quota.rateLimitResetCredits ?? [];
+  const usageLimitPolicy = useUsageLimitPolicy('claude', file);
+  const markersFor = useUsageLimitMarkers(usageLimitPolicy, now);
 
   return (
     <>
@@ -62,6 +70,7 @@ export function ClaudeQuotaBody({ quota, classes }: QuotaBodyProps<ClaudeQuotaSt
           <span className={classes.codexPlanValue}>{resetCount.toString()}</span>
         </div>
       )}
+      <UsageLimitPauseLine file={file} classes={classes} nowMs={now} />
       {resetCredits.length > 0 && (
         <div className={classes.codexResetCredits}>
           <div className={classes.codexResetCreditsTitle}>
@@ -135,7 +144,12 @@ export function ClaudeQuotaBody({ quota, classes }: QuotaBodyProps<ClaudeQuotaSt
                   )}
                 </div>
               </div>
-              <QuotaMeter percent={remaining} classes={classes} index={index} />
+              <QuotaMeter
+                percent={remaining}
+                classes={classes}
+                index={index}
+                markers={markersFor(window)}
+              />
             </div>
           );
         })

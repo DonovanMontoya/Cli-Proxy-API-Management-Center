@@ -12,6 +12,9 @@ export interface QuotaExceededConfig {
   /** Codex usage limits applied to credentials without their own override. */
   codexReservePercent?: number;
   codexDailyPacing?: boolean;
+  /** Claude counterparts; independent of the Codex defaults. */
+  claudeReservePercent?: number;
+  claudeDailyPacing?: boolean;
 }
 
 export interface Config {

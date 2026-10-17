@@ -1,6 +1,8 @@
 /**
- * Codex usage limits: the reserve and daily pacing the proxy applies before it
- * routes to a Codex credential (CLIProxyAPI sdk/cliproxy/auth/quota_reserve.go).
+ * Usage limits: the reserve and daily pacing the proxy applies before it routes
+ * to a Codex or Claude credential (CLIProxyAPI sdk/cliproxy/auth/quota_reserve.go).
+ * Both providers share the math; they differ in which windows count and in
+ * which global defaults apply.
  *
  * This mirrors the backend math so the panel can draw thresholds and explain
  * them. The backend stays the source of truth for actual pauses, which reach
@@ -10,36 +12,64 @@
  */
 
 import type { AuthFileFieldsPatch } from '@/services/api/authFiles';
-import type { AuthFileItem } from '@/types';
+import type { AuthFileItem, QuotaExceededConfig } from '@/types';
 import { DAY_MS, HOUR_MS } from '@/utils/time/durations';
 
 /** Upper bound offered by the editor; the backend itself accepts 0-100. */
-export const CODEX_RESERVE_MAX_PERCENT = 50;
+export const USAGE_LIMIT_RESERVE_MAX_PERCENT = 50;
 
 /** The backend does not pace windows shorter than two days (the 5h window). */
 const MIN_PACED_WINDOW_MS = 2 * DAY_MS;
 
-/**
- * Main windows the proxy reads from the X-Codex-Primary/Secondary headers.
- * Code-review and additional per-feature windows are not limited.
- */
-const LIMITED_WINDOW_IDS = new Set(['five-hour', 'weekly', 'monthly']);
+export type UsageLimitProvider = 'codex' | 'claude';
 
-/** Window lengths for legacy payloads that omit limit_window_seconds. */
-const FALLBACK_WINDOW_HOURS: Record<string, number> = { 'five-hour': 5, weekly: 168 };
+/** Config keys holding each provider's global defaults (quota-exceeded.<provider>-*). */
+export const USAGE_LIMIT_DEFAULT_KEYS = {
+  codex: { reservePercent: 'codexReservePercent', dailyPacing: 'codexDailyPacing' },
+  claude: { reservePercent: 'claudeReservePercent', dailyPacing: 'claudeDailyPacing' },
+} as const satisfies Record<
+  UsageLimitProvider,
+  { reservePercent: keyof QuotaExceededConfig; dailyPacing: keyof QuotaExceededConfig }
+>;
 
-export interface CodexUsageLimitDefaults {
+interface UsageLimitWindowSpec {
+  /** Window ids (as built by the provider's data.ts) the proxy limits. */
+  limited: ReadonlySet<string>;
+  /** Window lengths for payloads that omit the period. */
+  fallbackHours: Readonly<Record<string, number>>;
+}
+
+const USAGE_LIMIT_WINDOWS: Record<UsageLimitProvider, UsageLimitWindowSpec> = {
+  // Main windows the proxy reads from the X-Codex-Primary/Secondary headers.
+  // Code-review and additional per-feature windows are not limited.
+  codex: {
+    limited: new Set(['five-hour', 'weekly', 'monthly']),
+    fallbackHours: { 'five-hour': 5, weekly: 168 },
+  },
+  // Anthropic's `five_hour` session and `seven_day` weekly windows. Model- or
+  // product-scoped weekly windows (Opus, Sonnet, OAuth apps, Fable) are not limited.
+  claude: {
+    limited: new Set(['five-hour', 'seven-day']),
+    fallbackHours: { 'five-hour': 5, 'seven-day': 168 },
+  },
+};
+
+export const usageLimitProviderOf = (type: string): UsageLimitProvider | null =>
+  type === 'codex' || type === 'claude' ? type : null;
+
+export interface UsageLimitDefaults {
   reservePercent: number;
   dailyPacing: boolean;
 }
 
 /** Per-credential overrides; null inherits the global default. */
-export interface CodexUsageLimitOverrides {
+export interface UsageLimitOverrides {
   reservePercent: number | null;
   dailyPacing: boolean | null;
 }
 
-export interface CodexUsageLimitPolicy {
+export interface UsageLimitPolicy {
+  provider: UsageLimitProvider;
   reservePercent: number;
   dailyPacing: boolean;
   /** True when the value comes from the global config rather than the credential. */
@@ -47,14 +77,14 @@ export interface CodexUsageLimitPolicy {
   pacingInherited: boolean;
 }
 
-export interface CodexUsageLimitWindow {
+export interface UsageLimitWindow {
   id: string;
   usedPercent: number | null;
   resetAtMs?: number | null;
   periodHours?: number | null;
 }
 
-export interface CodexDailyPace {
+export interface DailyPace {
   /** 1-based day of the window, as the proxy reports it ("day 3 of 7"). */
   day: number;
   days: number;
@@ -70,52 +100,55 @@ export interface CodexDailyPace {
 }
 
 /** `percent` is the position from the left of a meter whose fill is the remaining share. */
-export type CodexWindowMarker =
-  { kind: 'reserve'; percent: number } | { kind: 'pace'; percent: number; pace: CodexDailyPace };
+export type UsageLimitMarker =
+  { kind: 'reserve'; percent: number } | { kind: 'pace'; percent: number; pace: DailyPace };
 
-export interface CodexUsageLimitPause {
+export interface UsageLimitPause {
   untilMs: number;
   reason: string;
 }
 
-const clampPercent = (value: number): number => Math.max(0, Math.min(100, value));
+export const clampPercent = (value: number): number => Math.max(0, Math.min(100, value));
 
-export const resolveCodexUsageLimitPolicy = (
-  defaults: CodexUsageLimitDefaults,
-  overrides: CodexUsageLimitOverrides
-): CodexUsageLimitPolicy => ({
+export const resolveUsageLimitPolicy = (
+  provider: UsageLimitProvider,
+  defaults: UsageLimitDefaults,
+  overrides: UsageLimitOverrides
+): UsageLimitPolicy => ({
+  provider,
   reservePercent: clampPercent(overrides.reservePercent ?? defaults.reservePercent),
   dailyPacing: overrides.dailyPacing ?? defaults.dailyPacing,
   reserveInherited: overrides.reservePercent === null,
   pacingInherited: overrides.dailyPacing === null,
 });
 
-export const isCodexUsageLimitActive = (policy: CodexUsageLimitPolicy): boolean =>
+export const isUsageLimitActive = (policy: UsageLimitPolicy): boolean =>
   policy.reservePercent > 0 || policy.dailyPacing;
 
-export const isCodexUsageLimitWindow = (windowId: string): boolean =>
-  LIMITED_WINDOW_IDS.has(windowId);
+export const isUsageLimitWindow = (provider: UsageLimitProvider, windowId: string): boolean =>
+  USAGE_LIMIT_WINDOWS[provider].limited.has(windowId);
 
 /** Length of a limited window long enough to be paced (weekly, monthly), else null. */
-const pacedWindowLengthMs = (window: CodexUsageLimitWindow): number | null => {
-  if (!isCodexUsageLimitWindow(window.id)) return null;
-  const hours = window.periodHours ?? FALLBACK_WINDOW_HOURS[window.id] ?? null;
+const pacedWindowLengthMs = (
+  provider: UsageLimitProvider,
+  window: UsageLimitWindow
+): number | null => {
+  if (!isUsageLimitWindow(provider, window.id)) return null;
+  const hours =
+    window.periodHours ?? USAGE_LIMIT_WINDOWS[provider].fallbackHours[window.id] ?? null;
   if (hours === null || !Number.isFinite(hours)) return null;
   const lengthMs = hours * HOUR_MS;
   return lengthMs >= MIN_PACED_WINDOW_MS ? lengthMs : null;
 };
 
-const isCodexPacedWindow = (window: CodexUsageLimitWindow): boolean =>
-  pacedWindowLengthMs(window) !== null;
-
 /** Today's allowance for a paced window, or null when pacing does not apply. */
-export function computeCodexDailyPace(
-  window: CodexUsageLimitWindow,
-  policy: CodexUsageLimitPolicy,
+export function computeDailyPace(
+  window: UsageLimitWindow,
+  policy: UsageLimitPolicy,
   nowMs: number
-): CodexDailyPace | null {
+): DailyPace | null {
   if (!policy.dailyPacing) return null;
-  const lengthMs = pacedWindowLengthMs(window);
+  const lengthMs = pacedWindowLengthMs(policy.provider, window);
   const resetAtMs = window.resetAtMs;
   if (lengthMs === null || typeof resetAtMs !== 'number' || !Number.isFinite(resetAtMs)) {
     return null;
@@ -144,11 +177,8 @@ export function computeCodexDailyPace(
   };
 }
 
-export const isCodexReserveReached = (
-  window: CodexUsageLimitWindow,
-  policy: CodexUsageLimitPolicy
-): boolean =>
-  isCodexUsageLimitWindow(window.id) &&
+export const isReserveReached = (window: UsageLimitWindow, policy: UsageLimitPolicy): boolean =>
+  isUsageLimitWindow(policy.provider, window.id) &&
   policy.reservePercent > 0 &&
   window.usedPercent !== null &&
   100 - window.usedPercent <= policy.reservePercent;
@@ -158,17 +188,17 @@ export const isCodexReserveReached = (
  * windows the remaining share at which today's allowance runs out. The pace
  * tick is dropped when it lands on the reserve (the window's last day).
  */
-export function buildCodexWindowMarkers(
-  window: CodexUsageLimitWindow,
-  policy: CodexUsageLimitPolicy,
+export function buildUsageLimitMarkers(
+  window: UsageLimitWindow,
+  policy: UsageLimitPolicy,
   nowMs: number
-): CodexWindowMarker[] {
-  if (!isCodexUsageLimitWindow(window.id)) return [];
-  const markers: CodexWindowMarker[] = [];
+): UsageLimitMarker[] {
+  if (!isUsageLimitWindow(policy.provider, window.id)) return [];
+  const markers: UsageLimitMarker[] = [];
   if (policy.reservePercent > 0) {
     markers.push({ kind: 'reserve', percent: policy.reservePercent });
   }
-  const pace = computeCodexDailyPace(window, policy, nowMs);
+  const pace = computeDailyPace(window, policy, nowMs);
   if (pace) {
     const floor = clampPercent(100 - pace.allowedUsedPercent);
     if (Math.abs(floor - policy.reservePercent) >= 0.5) {
@@ -178,14 +208,15 @@ export function buildCodexWindowMarkers(
   return markers;
 }
 
-/** The window the editor explains: the first paced main window (normally weekly). */
-export const pickCodexPacedWindow = <T extends CodexUsageLimitWindow>(
+/** The window the editor explains: the first paced limited window (normally weekly). */
+export const pickPacedWindow = <T extends UsageLimitWindow>(
+  provider: UsageLimitProvider,
   windows: readonly T[]
-): T | null => windows.find(isCodexPacedWindow) ?? null;
+): T | null => windows.find((window) => pacedWindowLengthMs(provider, window) !== null) ?? null;
 
-export const readCodexUsageLimitOverrides = (
+export const readUsageLimitOverrides = (
   file: Pick<AuthFileItem, 'quotaReservePercent' | 'quotaDailyPacing'>
-): CodexUsageLimitOverrides => ({
+): UsageLimitOverrides => ({
   reservePercent:
     typeof file.quotaReservePercent === 'number' && Number.isFinite(file.quotaReservePercent)
       ? file.quotaReservePercent
@@ -194,19 +225,19 @@ export const readCodexUsageLimitOverrides = (
 });
 
 /** Active usage-limit pause reported by the proxy, or null once it has lifted. */
-export const readCodexUsageLimitPause = (
+export const readUsageLimitPause = (
   file: AuthFileItem | undefined,
   nowMs: number
-): CodexUsageLimitPause | null => {
+): UsageLimitPause | null => {
   const untilMs = file?.usageLimitPausedUntilMs;
   if (typeof untilMs !== 'number' || !Number.isFinite(untilMs) || untilMs <= nowMs) return null;
   return { untilMs, reason: file?.usageLimitReason ?? '' };
 };
 
 /** Only the overrides that changed, or null when there is nothing to save. */
-export const buildCodexUsageLimitPatch = (
-  current: CodexUsageLimitOverrides,
-  next: CodexUsageLimitOverrides
+export const buildUsageLimitPatch = (
+  current: UsageLimitOverrides,
+  next: UsageLimitOverrides
 ): AuthFileFieldsPatch | null => {
   const patch: AuthFileFieldsPatch = {};
   if (current.reservePercent !== next.reservePercent) {

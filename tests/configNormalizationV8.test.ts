@@ -17,6 +17,21 @@ describe('v8 persisted configuration normalization', () => {
     ).toBe(true);
   });
 
+  test('reads Codex and Claude usage-limit defaults independently', () => {
+    const quota = normalizeConfigResponse({
+      'quota-exceeded': {
+        'codex-reserve-percent': 11,
+        'codex-daily-pacing': false,
+        'claude-reserve-percent': 6,
+        'claude-daily-pacing': true,
+      },
+    }).quotaExceeded;
+    expect(quota?.codexReservePercent).toBe(11);
+    expect(quota?.codexDailyPacing).toBe(false);
+    expect(quota?.claudeReservePercent).toBe(6);
+    expect(quota?.claudeDailyPacing).toBe(true);
+  });
+
   test('does not interpret legacy root settings as v8 values', () => {
     const config = normalizeConfigResponse({
       'api-keys': ['legacy-client'],
