@@ -17,7 +17,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { IconRefreshCw } from '@/components/ui/icons';
-import type { ResolvedTheme } from '@/types';
+import type { ClaudeQuotaState, ResolvedTheme } from '@/types';
 import { buildResetDisplay, resolveQuotaErrorMessage } from '@/utils/quota';
 import {
   getAuthFileIcon,
@@ -28,6 +28,7 @@ import {
 import { bindQuotaClasses, type QuotaClassMap } from '../types';
 import { QUOTA_ADAPTERS, type QuotaCardState } from '../providers';
 import { isQuotaRefreshDisabled, type QuotaFileEntry } from '../logic';
+import { hasClaudeUsageData } from '../providers/claude/data';
 import type { ModelRestriction } from '../modelAccess';
 import { UsageLimitsAction, type UsageLimitQuota } from '../usageLimits/UsageLimitsAction';
 import { readUsageLimitPause, usageLimitProviderOf } from '../usageLimits/model';
@@ -126,8 +127,19 @@ export function QuotaRow(props: QuotaRowProps) {
 
   const status = quota?.status ?? 'idle';
   const loading = status === 'loading';
-  const iconSrc = getAuthFileIcon(entry.type, resolvedTheme);
-  const typeLabel = getTypeLabel(t, entry.type);
+  // Claude keeps its last observation on screen while refreshing or after a failed read.
+  const retainedClaudeUsage =
+    entry.type === 'claude' && hasClaudeUsageData(quota as ClaudeQuotaState | undefined);
+  // Plugin quotas show the provider they report for, not the generic plugin type.
+  const file = entry.file;
+  const providerType =
+    entry.type === 'plugin'
+      ? String(
+          file.quotaProvider ?? file['quota_provider'] ?? file.provider ?? file.type ?? 'plugin'
+        )
+      : entry.type;
+  const iconSrc = getAuthFileIcon(providerType, resolvedTheme);
+  const typeLabel = getTypeLabel(t, providerType);
   const errorMessage = resolveQuotaErrorMessage(
     t,
     quota?.errorStatus,
@@ -148,7 +160,7 @@ export function QuotaRow(props: QuotaRowProps) {
               className={styles.iconWrap}
               title={typeLabel}
               style={
-                isThemeSurfaceIconProvider(entry.type)
+                isThemeSurfaceIconProvider(providerType)
                   ? { background: getThemeSurfaceIconBackground(resolvedTheme) }
                   : undefined
               }
@@ -217,7 +229,7 @@ export function QuotaRow(props: QuotaRowProps) {
             <IconRefreshCw size={13} aria-hidden="true" />
             {t(`${adapter.i18nPrefix}.idle`)}
           </button>
-        ) : loading ? (
+        ) : loading && !retainedClaudeUsage ? (
           <>
             <span className={styles.srOnly}>{t(`${adapter.i18nPrefix}.loading`)}</span>
             {[0, 1].map((cell) => (
@@ -227,12 +239,19 @@ export function QuotaRow(props: QuotaRowProps) {
               </div>
             ))}
           </>
-        ) : status === 'error' ? (
+        ) : status === 'error' && !retainedClaudeUsage ? (
           <div className={styles.errorText} role="alert">
             {t(`${adapter.i18nPrefix}.load_failed`, { message: errorMessage })}
           </div>
         ) : quota && hasRowCells(entry.type) ? (
-          <QuotaRowCells type={entry.type} quota={quota} file={entry.file} />
+          <>
+            {status === 'error' && (
+              <div className={styles.errorText} role="alert">
+                {t(`${adapter.i18nPrefix}.load_failed`, { message: errorMessage })}
+              </div>
+            )}
+            <QuotaRowCells type={entry.type} quota={quota} file={entry.file} />
+          </>
         ) : quota ? (
           <adapter.Body quota={quota} classes={rowQuotaClasses} file={entry.file} />
         ) : null}

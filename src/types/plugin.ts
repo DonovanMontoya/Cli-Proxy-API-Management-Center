@@ -1,11 +1,5 @@
 export type PluginConfigFieldType =
-  | 'string'
-  | 'number'
-  | 'integer'
-  | 'boolean'
-  | 'enum'
-  | 'array'
-  | 'object';
+  'string' | 'number' | 'integer' | 'boolean' | 'enum' | 'array' | 'object';
 
 export interface PluginConfigField {
   name: string;
@@ -40,6 +34,8 @@ export interface PluginListEntry {
   effectiveEnabled: boolean;
   supportsOAuth: boolean;
   oauthProvider?: string;
+  supportsQuota: boolean;
+  quotaProvider?: string;
   logo: string;
   configFields: PluginConfigField[];
   menus: PluginMenu[];

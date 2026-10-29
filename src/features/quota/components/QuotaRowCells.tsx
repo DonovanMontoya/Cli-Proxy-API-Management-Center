@@ -232,7 +232,7 @@ export function QuotaRowCells({
   /** The credential behind the quota; Codex and Claude read its usage-limit overrides. */
   file?: AuthFileItem;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const now = useNow();
   const usageLimitPolicy = useUsageLimitPolicy(usageLimitProviderOf(type), file);
   const markersFor = useUsageLimitMarkers(usageLimitPolicy, now);
@@ -243,7 +243,18 @@ export function QuotaRowCells({
 
   if (type === 'claude') {
     const claude = quota as ClaudeQuotaState;
-    const extra = claude.extraUsage?.is_enabled ? claude.extraUsage : null;
+    const extra = claude.extraUsage?.isEnabled ? claude.extraUsage : null;
+    // Extra-usage amounts are minor units; dollar balances are already dollars.
+    const formatMoney = (value: number | null, currency = 'USD', divisor = 1): string => {
+      if (value === null) return '--';
+      try {
+        return new Intl.NumberFormat(i18n.resolvedLanguage, { style: 'currency', currency }).format(
+          value / divisor
+        );
+      } catch {
+        return `${(value / divisor).toFixed(2)} ${currency}`;
+      }
+    };
     const fableUnavailable = restrictedModelsFor('claude', quota).some(
       (restriction) => restriction.model === 'Fable 5.1'
     );
@@ -262,9 +273,18 @@ export function QuotaRowCells({
         {extra && (
           <StatCell
             label={t('claude_quota.extra_usage_label')}
-            value={`$${(extra.used_credits / 100).toFixed(2)} / $${(extra.monthly_limit / 100).toFixed(2)}`}
+            value={`${formatMoney(extra.usedCredits, extra.currency ?? 'USD', 100)} / ${formatMoney(extra.monthlyLimit, extra.currency ?? 'USD', 100)}`}
           />
         )}
+        {(claude.dollarWindows ?? []).map((balance) => (
+          <StatCell
+            key={balance.key}
+            label={balance.key}
+            value={`${t('claude_quota.dollar_balance_remaining', {
+              amount: formatMoney(balance.remainingDollars),
+            })} / ${formatMoney(balance.limitDollars)}`}
+          />
+        ))}
         {claude.rateLimitResetCreditsAvailableCount != null && (
           <ResetCreditsCell
             prefix="claude_quota"

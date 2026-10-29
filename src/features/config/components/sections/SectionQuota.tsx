@@ -1,21 +1,13 @@
 import { useTranslation } from 'react-i18next';
-import { Input } from '@/components/ui/Input';
 import { CONFIG_TAB_ICONS, SECTION_INDEX_LABELS } from '../../constants';
 import type { ConfigSectionProps } from '../../types';
 import { SectionCard } from '../SectionCard';
-import {
-  FieldAnchor,
-  FieldGrid,
-  FieldGroup,
-  FieldStack,
-  ToggleRow,
-} from '../fields/FieldPrimitives';
-import { QuotaSwitchPreviewModelToggle, QuotaSwitchProjectToggle } from '../fields/sharedFields';
+import { SettingList, TextSetting, ToggleSetting } from '../fields/FieldPrimitives';
 import { getValidationMessage } from '../blocks/shared';
 
 const Icon = CONFIG_TAB_ICONS.quota;
 
-/** 04 Quota fallback: behaviour when quota runs out, plus Codex / Claude usage-limit defaults. */
+/** 04 Quota: global Codex / Claude usage-limit defaults (reserve and daily pacing). */
 export function SectionQuota({
   values,
   validationErrors,
@@ -35,86 +27,63 @@ export function SectionQuota({
       description={t('config_management.visual.sections.quota.description')}
       animateIn={animateIn}
     >
-      <FieldStack>
-        <FieldGrid>
-          <QuotaSwitchProjectToggle values={values} disabled={disabled} onChange={onChange} />
-          <QuotaSwitchPreviewModelToggle values={values} disabled={disabled} onChange={onChange} />
-          <FieldAnchor fieldId="quotaAntigravityCredits">
-            <ToggleRow
-              title={t('config_management.visual.sections.quota.antigravity_credits')}
-              checked={values.quotaAntigravityCredits}
-              disabled={disabled}
-              onChange={(quotaAntigravityCredits) => onChange({ quotaAntigravityCredits })}
-            />
-          </FieldAnchor>
-        </FieldGrid>
+      {/* Global defaults only; per-account overrides live on the Quota page.
+          Codex and Claude defaults are independent. */}
+      <SettingList
+        title={t('config_management.visual.sections.quota.codex_limits_title')}
+        description={t('config_management.visual.sections.quota.codex_limits_desc')}
+      >
+        <TextSetting
+          fieldId="quotaCodexReservePercent"
+          size="sm"
+          label={t('config_management.visual.sections.quota.codex_reserve_percent')}
+          description={t('config_management.visual.sections.quota.codex_reserve_percent_desc')}
+          type="number"
+          min={0}
+          max={100}
+          placeholder="0"
+          value={values.quotaCodexReservePercent}
+          onChange={(quotaCodexReservePercent) => onChange({ quotaCodexReservePercent })}
+          disabled={disabled}
+          error={codexReserveError}
+        />
+        <ToggleSetting
+          fieldId="quotaCodexDailyPacing"
+          label={t('config_management.visual.sections.quota.codex_daily_pacing')}
+          description={t('config_management.visual.sections.quota.codex_daily_pacing_desc')}
+          checked={values.quotaCodexDailyPacing}
+          disabled={disabled}
+          onChange={(quotaCodexDailyPacing) => onChange({ quotaCodexDailyPacing })}
+        />
+      </SettingList>
 
-        {/* Global defaults only; per-account overrides live on the Quota page.
-            Codex and Claude defaults are independent. */}
-        <FieldGroup
-          title={t('config_management.visual.sections.quota.codex_limits_title')}
-          description={t('config_management.visual.sections.quota.codex_limits_desc')}
-        >
-          <FieldGrid>
-            <FieldAnchor fieldId="quotaCodexReservePercent">
-              <Input
-                label={t('config_management.visual.sections.quota.codex_reserve_percent')}
-                type="number"
-                min={0}
-                max={100}
-                step={1}
-                placeholder="0"
-                value={values.quotaCodexReservePercent}
-                onChange={(e) => onChange({ quotaCodexReservePercent: e.target.value })}
-                disabled={disabled}
-                error={codexReserveError}
-                hint={t('config_management.visual.sections.quota.codex_reserve_percent_desc')}
-              />
-            </FieldAnchor>
-            <FieldAnchor fieldId="quotaCodexDailyPacing">
-              <ToggleRow
-                title={t('config_management.visual.sections.quota.codex_daily_pacing')}
-                description={t('config_management.visual.sections.quota.codex_daily_pacing_desc')}
-                checked={values.quotaCodexDailyPacing}
-                disabled={disabled}
-                onChange={(quotaCodexDailyPacing) => onChange({ quotaCodexDailyPacing })}
-              />
-            </FieldAnchor>
-          </FieldGrid>
-        </FieldGroup>
-
-        <FieldGroup
-          title={t('config_management.visual.sections.quota.claude_limits_title')}
-          description={t('config_management.visual.sections.quota.claude_limits_desc')}
-        >
-          <FieldGrid>
-            <FieldAnchor fieldId="quotaClaudeReservePercent">
-              <Input
-                label={t('config_management.visual.sections.quota.claude_reserve_percent')}
-                type="number"
-                min={0}
-                max={100}
-                step={1}
-                placeholder="0"
-                value={values.quotaClaudeReservePercent}
-                onChange={(e) => onChange({ quotaClaudeReservePercent: e.target.value })}
-                disabled={disabled}
-                error={claudeReserveError}
-                hint={t('config_management.visual.sections.quota.claude_reserve_percent_desc')}
-              />
-            </FieldAnchor>
-            <FieldAnchor fieldId="quotaClaudeDailyPacing">
-              <ToggleRow
-                title={t('config_management.visual.sections.quota.claude_daily_pacing')}
-                description={t('config_management.visual.sections.quota.claude_daily_pacing_desc')}
-                checked={values.quotaClaudeDailyPacing}
-                disabled={disabled}
-                onChange={(quotaClaudeDailyPacing) => onChange({ quotaClaudeDailyPacing })}
-              />
-            </FieldAnchor>
-          </FieldGrid>
-        </FieldGroup>
-      </FieldStack>
+      <SettingList
+        title={t('config_management.visual.sections.quota.claude_limits_title')}
+        description={t('config_management.visual.sections.quota.claude_limits_desc')}
+      >
+        <TextSetting
+          fieldId="quotaClaudeReservePercent"
+          size="sm"
+          label={t('config_management.visual.sections.quota.claude_reserve_percent')}
+          description={t('config_management.visual.sections.quota.claude_reserve_percent_desc')}
+          type="number"
+          min={0}
+          max={100}
+          placeholder="0"
+          value={values.quotaClaudeReservePercent}
+          onChange={(quotaClaudeReservePercent) => onChange({ quotaClaudeReservePercent })}
+          disabled={disabled}
+          error={claudeReserveError}
+        />
+        <ToggleSetting
+          fieldId="quotaClaudeDailyPacing"
+          label={t('config_management.visual.sections.quota.claude_daily_pacing')}
+          description={t('config_management.visual.sections.quota.claude_daily_pacing_desc')}
+          checked={values.quotaClaudeDailyPacing}
+          disabled={disabled}
+          onChange={(quotaClaudeDailyPacing) => onChange({ quotaClaudeDailyPacing })}
+        />
+      </SettingList>
     </SectionCard>
   );
 }

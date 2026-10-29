@@ -53,6 +53,11 @@ interface WindowLike {
   resetAtMs?: number | null;
 }
 
+interface DollarWindowLike {
+  key: string;
+  resetsAt?: string | null;
+}
+
 interface ResetCreditLike {
   id?: string;
   status?: string;
@@ -94,6 +99,18 @@ export function collectQuotaRowInstants(
     const windows = collectRows((quota as { windows?: WindowLike[] }).windows ?? [], 'window');
     if (provider === 'devin') return windows;
 
+    // Claude dollar balances render separately from plan meters, but their resets
+    // still return capacity and must participate in recovery sorting.
+    const balances =
+      provider === 'claude'
+        ? ((quota as { dollarWindows?: DollarWindowLike[] }).dollarWindows ?? [])
+            .map((balance): QuotaRowInstant | null => {
+              const atMs = parseIsoToMs(balance.resetsAt);
+              return atMs === null ? null : { rowId: balance.key, atMs, kind: 'window' };
+            })
+            .filter((instant): instant is QuotaRowInstant => instant !== null)
+        : [];
+
     // Codex manual resets and Claude banked resets share this shape.
     const credits = (
       (quota as { rateLimitResetCredits?: ResetCreditLike[] }).rateLimitResetCredits ?? []
@@ -107,7 +124,7 @@ export function collectQuotaRowInstants(
       })
       .filter((instant): instant is QuotaRowInstant => instant !== null);
 
-    return [...windows, ...credits];
+    return [...windows, ...balances, ...credits];
   }
 
   if (provider === 'xai') {
@@ -118,7 +135,7 @@ export function collectQuotaRowInstants(
     return [{ rowId: XAI_WEEKLY_ROW_ID, atMs: billing.resetAtMs, kind: 'window' }];
   }
 
-  if (provider === 'antigravity') {
+  if (provider === 'antigravity' || provider === 'plugin') {
     // Buckets live inside groups; the grouping is a display concern here.
     const buckets = ((quota as { groups?: { buckets?: WindowLike[] }[] }).groups ?? []).flatMap(
       (group) => group.buckets ?? []

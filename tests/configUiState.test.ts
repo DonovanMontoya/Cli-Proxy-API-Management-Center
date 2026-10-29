@@ -1,5 +1,17 @@
 import { describe, expect, test } from 'bun:test';
 import {
+  COMMON_FIELD_IDS,
+  CONFIG_SECTION_IDS,
+  CONFIG_TAB_IDS,
+  FIELD_VALUE_KEYS,
+  SECTION_INDEX_LABELS,
+} from '@/features/config/constants';
+import {
+  CONFIG_FIELD_SEARCH_INDEX,
+  findConfigFieldById,
+  searchConfigFields,
+} from '@/features/config/searchIndex';
+import {
   buildHeaderMeta,
   countSectionErrors,
   countTotalErrors,
@@ -10,6 +22,7 @@ import {
   type ConfigStatusInput,
 } from '@/features/config/uiState';
 import type { VisualConfigValidationErrors } from '@/types/visualConfig';
+import { LANGUAGE_ORDER } from '@/utils/constants';
 
 const statusInput = (overrides: Partial<ConfigStatusInput> = {}): ConfigStatusInput => ({
   disconnected: false,
@@ -50,8 +63,8 @@ describe('resolveStatus', () => {
     expect(status.tone).toBe('error');
   });
 
-  test('every status resolves label keys that exist in all four locales', async () => {
-    const locales = ['en', 'zh-CN', 'zh-TW', 'ru'];
+  test('every status resolves label keys that exist in all supported locales', async () => {
+    const locales = LANGUAGE_ORDER;
     const inputs: Partial<ConfigStatusInput>[] = [
       { disconnected: true },
       { loading: true },
@@ -143,14 +156,86 @@ describe('resolveDirtyTabs', () => {
     expect(tabs.has('connectivity')).toBe(true);
     expect(tabs.size).toBe(2);
 
-    const quotaTabs = resolveDirtyTabs(new Set(['quotaSwitchProject']));
-    expect(quotaTabs.has('common')).toBe(true);
-    expect(quotaTabs.has('quota')).toBe(true);
+    expect([...resolveDirtyTabs(new Set(['quotaAntigravityCredits']))]).toEqual(['advanced']);
+    expect(resolveDirtyTabs(new Set(['quotaSwitchProject', 'quotaSwitchPreviewModel'])).size).toBe(
+      0
+    );
   });
 
   test('unknown keys are ignored instead of crashing', () => {
     const tabs = resolveDirtyTabs(new Set(['not-a-real-key']));
     expect(tabs.size).toBe(0);
+  });
+});
+
+describe('Antigravity credits UI and search', () => {
+  test('keeps the usage-limit quota tab without the deprecated switches', () => {
+    // Fork: the quota tab carries Codex / Claude usage-limit defaults only.
+    expect(CONFIG_TAB_IDS).toContain('quota');
+    expect(CONFIG_SECTION_IDS.map((id) => SECTION_INDEX_LABELS[id])).toEqual([
+      '01',
+      '02',
+      '03',
+      '04',
+      '05',
+      '06',
+      '07',
+    ]);
+    expect(
+      CONFIG_FIELD_SEARCH_INDEX.filter((entry) => entry.sectionId === 'quota').map(
+        (entry) => entry.fieldId
+      )
+    ).not.toContain('quotaAntigravityCredits');
+    for (const field of ['quotaSwitchProject', 'quotaSwitchPreviewModel']) {
+      expect(findConfigFieldById(field)).toBeUndefined();
+      expect(FIELD_VALUE_KEYS).not.toHaveProperty(field);
+      expect(COMMON_FIELD_IDS).not.toContain(field);
+    }
+    for (const query of ['switch-project', 'switch-preview-model']) {
+      expect(searchConfigFields(query, (key) => key)).toEqual([]);
+    }
+  });
+
+  test('credits search targets Advanced in every locale', async () => {
+    const entry = findConfigFieldById('quotaAntigravityCredits');
+    expect(entry?.sectionId).toBe('advanced');
+    expect(entry?.labelKey).toBe('config_management.visual.sections.advanced.antigravity_credits');
+    for (const locale of LANGUAGE_ORDER) {
+      const json = await Bun.file(`src/i18n/locales/${locale}.json`).json();
+      const sections = json.config_management.visual.sections;
+      expect(sections.quota ?? {}).not.toHaveProperty('antigravity_credits');
+      expect(typeof sections.advanced.antigravity_credits).toBe('string');
+      const translate = (key: string): string =>
+        key === entry?.labelKey ? sections.advanced.antigravity_credits : key;
+      for (const query of [sections.advanced.antigravity_credits, 'antigravity-credits']) {
+        expect(searchConfigFields(query, translate)).toContainEqual(entry);
+      }
+    }
+  });
+
+  test('renders credits inside the Advanced Antigravity group, not common', async () => {
+    const root = 'src/features/config';
+    const advanced = await Bun.file(`${root}/components/sections/SectionAdvanced.tsx`).text();
+    const group = advanced.slice(
+      advanced.indexOf("label={t('config_management.visual.sections.advanced.antigravity_title')}"),
+      advanced.indexOf("label={t('config_management.visual.sections.advanced.devin_title')}")
+    );
+    expect(group).toContain('fieldId="quotaAntigravityCredits"');
+    expect(group).toContain('checked={values.quotaAntigravityCredits}');
+    expect(group).toContain(
+      'onChange={(quotaAntigravityCredits) => onChange({ quotaAntigravityCredits })}'
+    );
+    expect(group).toContain('config_management.visual.sections.advanced.antigravity_credits');
+    for (const file of [
+      'components/sections/SectionCommon.tsx',
+      'components/fields/sharedFields.tsx',
+      'ConfigPage.tsx',
+    ]) {
+      const source = await Bun.file(`${root}/${file}`).text();
+      expect(source).not.toMatch(/QuotaSwitch|quotaSwitch/);
+    }
+    const quotaSection = await Bun.file(`${root}/components/sections/SectionQuota.tsx`).text();
+    expect(quotaSection).not.toContain('quotaAntigravityCredits');
   });
 });
 
@@ -215,6 +300,7 @@ describe('localStorage readers', () => {
   });
 
   test('readSavedSection falls back to common on stale values', () => {
+    expect(readSavedSection('quota')).toBe('quota');
     expect(readSavedSection('payload')).toBe('payload');
     expect(readSavedSection('common')).toBe('common');
     expect(readSavedSection('server')).toBe('common'); // 历史分区 id 不再存在

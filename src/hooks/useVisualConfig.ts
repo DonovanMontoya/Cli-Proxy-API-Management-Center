@@ -1271,8 +1271,6 @@ function getNextDirtyFields(
       'maxRetryCredentials',
       'maxRetryInterval',
       'wsAuth',
-      'quotaSwitchProject',
-      'quotaSwitchPreviewModel',
       'quotaCodexReservePercent',
       'quotaCodexDailyPacing',
       'quotaClaudeReservePercent',
@@ -1442,22 +1440,23 @@ function parseVisualValuesFromYaml(yamlContent: string): VisualConfigValues {
   const v8OauthProviders = asRecord(v8Oauth?.['providers']);
   const v8OauthProvidersAistudio = asRecord(v8OauthProviders?.['aistudio']);
   const v8OauthProvidersCodex = asRecord(v8OauthProviders?.['codex']);
+  const v8Upstream = asRecord(parsed?.['upstream']);
+  const v8UpstreamClaude = asRecord(v8Upstream?.['claude']);
   const v8OauthProvidersClaude = asRecord(v8OauthProviders?.['claude']);
   const v8OauthProvidersAntigravity = asRecord(v8OauthProviders?.['antigravity']);
-  const v8UpstreamClaude = asRecord(asRecord(parsed?.['upstream'])?.['claude']);
   const v8Multimedia = asRecord(parsed?.['multimedia']);
   const v8Observability = asRecord(parsed?.['observability']);
   const v8ObservabilityLogs = asRecord(v8Observability?.['logs']);
   const v8ObservabilityUsage = asRecord(v8Observability?.['usage']);
   const tls = asRecord(v8Server?.['tls']);
   const remoteManagement = asRecord(parsed['management']);
-  const quotaExceeded = asRecord(parsed['quota-exceeded']);
   const routing = asRecord(parsed.routing);
   const payload = asRecord(v8Requests?.['payload']);
   const streaming = asRecord(v8Requests?.['streaming']);
   const plugins = asRecord(parsed.plugins);
   const antigravity = asRecord(v8OauthProviders?.['antigravity']);
   const devin = asRecord(v8OauthProviders?.['devin']);
+  const quotaExceeded = asRecord(parsed['quota-exceeded']);
   // Canonical keys win per field; the pre-`upstream` OAuth location is only a fallback.
   const claudeHeaderDefaults = {
     ...asRecord(v8OauthProvidersClaude?.['header-defaults']),
@@ -1553,12 +1552,6 @@ function parseVisualValuesFromYaml(yamlContent: string): VisualConfigValues {
         ? codexHeaderDefaults['beta-features']
         : '',
 
-    quotaSwitchProject: Boolean(
-      quotaExceeded?.['switch-project'] ?? DEFAULT_VISUAL_VALUES.quotaSwitchProject
-    ),
-    quotaSwitchPreviewModel: Boolean(
-      quotaExceeded?.['switch-preview-model'] ?? DEFAULT_VISUAL_VALUES.quotaSwitchPreviewModel
-    ),
     quotaCodexReservePercent: String(quotaExceeded?.['codex-reserve-percent'] ?? ''),
     quotaCodexDailyPacing: Boolean(quotaExceeded?.['codex-daily-pacing'] ?? false),
     quotaClaudeReservePercent: String(quotaExceeded?.['claude-reserve-percent'] ?? ''),
@@ -2013,21 +2006,12 @@ export function useVisualConfig() {
         }
 
         const quotaDirty =
-          dirtyFields.has('quotaSwitchProject') ||
-          dirtyFields.has('quotaSwitchPreviewModel') ||
           dirtyFields.has('quotaCodexReservePercent') ||
           dirtyFields.has('quotaCodexDailyPacing') ||
           dirtyFields.has('quotaClaudeReservePercent') ||
-          dirtyFields.has('quotaClaudeDailyPacing') ||
-          dirtyFields.has('quotaAntigravityCredits');
+          dirtyFields.has('quotaClaudeDailyPacing');
         if (quotaDirty) {
           ensureMapInDoc(doc, ['quota-exceeded']);
-          if (dirtyFields.has('quotaSwitchProject')) {
-            doc.setIn(['quota-exceeded', 'switch-project'], values.quotaSwitchProject);
-          }
-          if (dirtyFields.has('quotaSwitchPreviewModel')) {
-            doc.setIn(['quota-exceeded', 'switch-preview-model'], values.quotaSwitchPreviewModel);
-          }
           if (dirtyFields.has('quotaCodexReservePercent')) {
             setNumberFromStringInDoc(
               doc,
@@ -2048,13 +2032,14 @@ export function useVisualConfig() {
           if (dirtyFields.has('quotaClaudeDailyPacing')) {
             doc.setIn(['quota-exceeded', 'claude-daily-pacing'], values.quotaClaudeDailyPacing);
           }
-          if (dirtyFields.has('quotaAntigravityCredits')) {
-            doc.setIn(
-              ['oauth', 'providers', 'antigravity', 'antigravity-credits'],
-              values.quotaAntigravityCredits
-            );
-          }
           deleteIfMapEmpty(doc, ['quota-exceeded']);
+        }
+        if (dirtyFields.has('quotaAntigravityCredits')) {
+          ensureMapInDoc(doc, ['oauth', 'providers', 'antigravity']);
+          doc.setIn(
+            ['oauth', 'providers', 'antigravity', 'antigravity-credits'],
+            values.quotaAntigravityCredits
+          );
         }
 
         const routingDirty =

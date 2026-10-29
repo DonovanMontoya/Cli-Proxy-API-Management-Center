@@ -9,12 +9,40 @@ describe('v8 persisted configuration normalization', () => {
     ).toBe(false);
   });
 
-  test('reads Antigravity credits without requiring the unrelated quota-exceeded block', () => {
+  // Fork: quota-exceeded also carries Codex / Claude usage-limit defaults.
+  const usageLimitDefaults = {
+    codexReservePercent: 0,
+    codexDailyPacing: false,
+    claudeReservePercent: 0,
+    claudeDailyPacing: false,
+  };
+
+  test('reads only Antigravity credits from the OAuth provider path', () => {
+    expect(normalizeConfigResponse({}).quotaExceeded).toEqual({
+      antigravityCredits: false,
+      ...usageLimitDefaults,
+    });
+    for (const enabled of [true, false]) {
+      const oauth = { providers: { antigravity: { 'antigravity-credits': enabled } } };
+      expect(normalizeConfigResponse({ oauth }).quotaExceeded).toEqual({
+        antigravityCredits: enabled,
+        ...usageLimitDefaults,
+      });
+      const config = normalizeConfigResponse({
+        oauth,
+        'quota-exceeded': {
+          'switch-project': true,
+          'switch-preview-model': true,
+          'antigravity-credits': !enabled,
+        },
+      });
+      expect(config.quotaExceeded).toMatchObject({ antigravityCredits: enabled });
+      expect(config.quotaExceeded).not.toHaveProperty('switchProject');
+      expect(config.quotaExceeded).not.toHaveProperty('switchPreviewModel');
+    }
     expect(
-      normalizeConfigResponse({
-        oauth: { providers: { antigravity: { 'antigravity-credits': true } } },
-      }).quotaExceeded?.antigravityCredits
-    ).toBe(true);
+      normalizeConfigResponse({ 'quota-exceeded': { 'antigravity-credits': true } }).quotaExceeded
+    ).toMatchObject({ antigravityCredits: false });
   });
 
   test('reads Codex and Claude usage-limit defaults independently', () => {

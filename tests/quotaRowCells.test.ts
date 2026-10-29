@@ -72,7 +72,7 @@ describe('compact quota rows', () => {
       rateLimitResetCreditsAvailableCount: 2,
       rateLimitResetCredits: [{ id: 'reset-1', status: 'available', grantedAt: '', expiresAt }],
     };
-    expect(rowSubtitleParts('codex', codex, i18n.t, Date.now())).toEqual(['Pro 5x']);
+    expect(rowSubtitleParts('codex', codex, i18n.t, Date.now())).toEqual(['Pro 100']);
     const markup = renderToStaticMarkup(
       createElement(QuotaRowCells, { type: 'codex', quota: codex })
     );

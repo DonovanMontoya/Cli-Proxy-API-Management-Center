@@ -8,6 +8,7 @@
  */
 
 import type { AuthFileItem } from '@/types';
+import type { ReactNode } from 'react';
 
 export interface QuotaClassMap {
   // 额度行（五个提供商共用）
@@ -106,4 +107,8 @@ export interface QuotaBodyProps<TState> {
   classes: QuotaClassMap;
   /** The credential behind the quota, for bodies that read per-credential settings. */
   file?: AuthFileItem;
+  /** Host-owned chips appended to the provider's plan row (`codexPlanItem` spans). */
+  planItems?: ReactNode;
+  /** Host-owned content placed right after the plan row, before usage rows. */
+  afterPlan?: ReactNode;
 }

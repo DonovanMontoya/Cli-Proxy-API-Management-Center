@@ -230,6 +230,14 @@ export const CONFIG_FIELD_SEARCH_INDEX: ConfigFieldSearchEntry[] = [
 
   // ── connectivity ──────────────────────────────────────────────────────────
   {
+    fieldId: 'githubToken',
+    sectionId: 'connectivity',
+    labelKey: L('sections.server.github_token'),
+    hintKey: L('sections.server.github_token_hint'),
+    yamlKeys: ['server', 'github-token'],
+    keywords: ['GITHUB_TOKEN', 'GitHub', 'token'],
+  },
+  {
     fieldId: 'trustedProxies',
     sectionId: 'connectivity',
     labelKey: L('serverExtras.trustedProxies.label'),
@@ -519,20 +527,6 @@ export const CONFIG_FIELD_SEARCH_INDEX: ConfigFieldSearchEntry[] = [
   },
   // ── quota ─────────────────────────────────────────────────────────────────
   {
-    fieldId: 'quotaSwitchProject',
-    sectionId: 'quota',
-    labelKey: L('sections.quota.switch_project'),
-    hintKey: L('sections.quota.switch_project_desc'),
-    yamlKeys: ['quota-exceeded', 'switch-project'],
-  },
-  {
-    fieldId: 'quotaSwitchPreviewModel',
-    sectionId: 'quota',
-    labelKey: L('sections.quota.switch_preview_model'),
-    hintKey: L('sections.quota.switch_preview_model_desc'),
-    yamlKeys: ['quota-exceeded', 'switch-preview-model'],
-  },
-  {
     fieldId: 'quotaCodexReservePercent',
     sectionId: 'quota',
     labelKey: L('sections.quota.codex_reserve_percent'),
@@ -564,12 +558,6 @@ export const CONFIG_FIELD_SEARCH_INDEX: ConfigFieldSearchEntry[] = [
     yamlKeys: ['quota-exceeded', 'claude-daily-pacing'],
     keywords: ['claude', 'usage limit', 'weekly', 'pace'],
   },
-  {
-    fieldId: 'quotaAntigravityCredits',
-    sectionId: 'quota',
-    labelKey: L('sections.quota.antigravity_credits'),
-    yamlKeys: ['oauth', 'providers', 'antigravity', 'antigravity-credits'],
-  },
   // ── streaming ─────────────────────────────────────────────────────────────
   {
     fieldId: 'streamingKeepaliveSeconds',
@@ -593,6 +581,12 @@ export const CONFIG_FIELD_SEARCH_INDEX: ConfigFieldSearchEntry[] = [
     yamlKeys: ['requests', 'nonstream-keepalive-interval'],
   },
   // ── advanced ──────────────────────────────────────────────────────────────
+  {
+    fieldId: 'quotaAntigravityCredits',
+    sectionId: 'advanced',
+    labelKey: L('sections.advanced.antigravity_credits'),
+    yamlKeys: ['oauth', 'providers', 'antigravity', 'antigravity-credits'],
+  },
   {
     fieldId: 'pluginsEnabled',
     sectionId: 'advanced',
