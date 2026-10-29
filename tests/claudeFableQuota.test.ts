@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import type { TFunction } from 'i18next';
-import { buildClaudeQuotaWindows } from '@/features/quota/providers/claude/data';
+import {
+  buildClaudeQuotaWindows,
+  claudeDollarWindowLabel,
+} from '@/features/quota/providers/claude/data';
 import type { ClaudeUsagePayload } from '@/types';
 import { formatQuotaResetTime } from '@/utils/quota';
 
@@ -272,5 +275,10 @@ describe('Claude Fable quota', () => {
       { id: 'five-hour', usedPercent: 10 },
       { id: 'seven-day', usedPercent: 20 },
     ]);
+  });
+
+  test('labels known dollar balances and keeps unknown keys raw', () => {
+    expect(claudeDollarWindowLabel('iguana_necktie', t)).toBe('claude_quota.cloud_session_credits');
+    expect(claudeDollarWindowLabel('new_codename', t)).toBe('new_codename');
   });
 });

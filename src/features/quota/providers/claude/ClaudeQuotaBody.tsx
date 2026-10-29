@@ -25,6 +25,7 @@ import { collectQuotaRowInstants, pickUrgentRowId, resetCreditRowId } from '../.
 import type { QuotaBodyProps } from '../../types';
 import { UsageLimitPauseLine } from '../../usageLimits/UsageLimitPauseLine';
 import { useUsageLimitMarkers, useUsageLimitPolicy } from '../../usageLimits/useUsageLimits';
+import { claudeDollarWindowLabel } from './data';
 
 export function ClaudeQuotaBody({
   quota,
@@ -205,7 +206,7 @@ export function ClaudeQuotaBody({
           <div key={balance.key} className={classes.quotaRow}>
             <div className={classes.quotaRowHeader}>
               <span className={classes.quotaModel} title={balance.key}>
-                {balance.key}
+                {claudeDollarWindowLabel(balance.key, t)}
               </span>
               <div className={classes.quotaMeta}>
                 <span className={classes.quotaPercent}>

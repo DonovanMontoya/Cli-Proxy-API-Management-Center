@@ -449,7 +449,7 @@ describe('Claude usage snapshot rendering and retention', () => {
       '<div class="quotaRowHeader"><span class="quotaModel">Extra Usage</span><div class="quotaMeta"><span class="quotaPercent">Enabled</span><span class="quotaResetRelative">25% used</span>'
     );
     expect(markup).toContain(
-      '<span class="quotaModel" title="iguana_necktie">iguana_necktie</span><div class="quotaMeta"><span class="quotaPercent">$94.96 remaining</span>'
+      '<span class="quotaModel" title="iguana_necktie">Cloud session credits</span><div class="quotaMeta"><span class="quotaPercent">$94.96 remaining</span>'
     );
     expect(markup).toContain('<div class="quotaMeta"><span class="quotaReset">Resets</span>');
     expect(markup).not.toMatch(/<div class="quotaRow"><span class="quotaReset">/);

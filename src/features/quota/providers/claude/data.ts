@@ -121,6 +121,17 @@ const isDollarDenominatedWindow = (window: ClaudeUsageWindow) =>
   normalizeNumberValue(window.used_dollars) !== null ||
   normalizeNumberValue(window.remaining_dollars) !== null;
 
+// Dollar balances arrive under Anthropic's internal codenames; name the known
+// ones and fall back to the raw key for anything new.
+const CLAUDE_DOLLAR_WINDOW_LABEL_KEYS: Record<string, string> = {
+  iguana_necktie: 'claude_quota.cloud_session_credits',
+};
+
+export const claudeDollarWindowLabel = (key: string, t: TFunction): string => {
+  const labelKey = CLAUDE_DOLLAR_WINDOW_LABEL_KEYS[key];
+  return labelKey ? t(labelKey) : key;
+};
+
 export const buildClaudeQuotaWindows = (
   payload: ClaudeUsagePayload,
   t: TFunction

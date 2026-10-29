@@ -25,6 +25,7 @@ import { restrictedModelsFor } from '../modelAccess';
 import type { QuotaProviderType } from '../providers/types';
 import { useUsageLimitMarkers, useUsageLimitPolicy } from '../usageLimits/useUsageLimits';
 import { usageLimitProviderOf } from '../usageLimits/model';
+import { claudeDollarWindowLabel } from '../providers/claude/data';
 import styles from './QuotaRow.module.scss';
 
 const levelClass = (remaining: number | null): string => {
@@ -279,7 +280,7 @@ export function QuotaRowCells({
         {(claude.dollarWindows ?? []).map((balance) => (
           <StatCell
             key={balance.key}
-            label={balance.key}
+            label={claudeDollarWindowLabel(balance.key, t)}
             value={`${t('claude_quota.dollar_balance_remaining', {
               amount: formatMoney(balance.remainingDollars),
             })} / ${formatMoney(balance.limitDollars)}`}
