@@ -242,6 +242,11 @@ describe('quota-exceeded duration settings', () => {
       runVisualConfig(source, [{ quotaBankedResetAutoUseBefore: 'soon' }]).visualValidationErrors
         ?.quotaBankedResetAutoUseBefore
     ).toBe('invalid_duration');
+    // A unitless number is saved as a string the backend cannot parse.
+    expect(
+      runVisualConfig(source, [{ quotaBankedResetAutoUseBefore: '5' }]).visualValidationErrors
+        ?.quotaBankedResetAutoUseBefore
+    ).toBe('invalid_duration');
   });
 
   test('clearing a duration removes the key instead of writing an empty string', () => {

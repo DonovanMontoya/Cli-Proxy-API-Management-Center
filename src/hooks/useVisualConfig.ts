@@ -202,10 +202,13 @@ function getPercentError(value: string): 'percent_range' | undefined {
     : 'percent_range';
 }
 
-/** Non-negative Go duration ("5m", "0"); bare integers are YAML nanoseconds. */
+/**
+ * Non-negative Go duration ("5m", "0"). A unit is required: the value is saved
+ * as a string, and the backend rejects a unitless "5" (it would also mean 5ns).
+ */
 function getNonNegativeDurationError(value: string): 'invalid_duration' | undefined {
   const trimmed = value.trim();
-  if (!trimmed || /^\d+$/.test(trimmed)) return undefined;
+  if (!trimmed) return undefined;
   const seconds = goDurationSeconds(trimmed);
   return seconds === undefined || seconds < 0 ? 'invalid_duration' : undefined;
 }
