@@ -25,6 +25,7 @@ import {
   writeVisualAdditions,
   writeICEServers,
   validateVisualAdditions,
+  goDurationSeconds,
 } from '@/features/config/visualConfigAdditions';
 
 import {
@@ -94,6 +95,13 @@ function setStringInDoc(doc: YamlDocument, path: YamlPath, value: unknown): void
   if (docHas(doc, path)) {
     doc.setIn(path, '');
   }
+}
+
+/** Durations never persist as "": the backend's time.Duration fields reject empty strings. */
+function setDurationInDoc(doc: YamlDocument, path: YamlPath, value: string): void {
+  const trimmed = value.trim();
+  if (trimmed) doc.setIn(path, trimmed);
+  else if (docHas(doc, path)) doc.deleteIn(path);
 }
 
 function setStringListInDoc(doc: YamlDocument, path: YamlPath, values: string[]): void {
@@ -194,6 +202,14 @@ function getPercentError(value: string): 'percent_range' | undefined {
     : 'percent_range';
 }
 
+/** Non-negative Go duration ("5m", "0"); bare integers are YAML nanoseconds. */
+function getNonNegativeDurationError(value: string): 'invalid_duration' | undefined {
+  const trimmed = value.trim();
+  if (!trimmed || /^\d+$/.test(trimmed)) return undefined;
+  const seconds = goDurationSeconds(trimmed);
+  return seconds === undefined || seconds < 0 ? 'invalid_duration' : undefined;
+}
+
 function getRedisRetentionError(value: string): 'integer_range_1_3600' | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
@@ -219,6 +235,10 @@ export function getVisualConfigValidationErrors(
     authAutoRefreshWorkers: getIntegerError(values.authAutoRefreshWorkers),
     quotaCodexReservePercent: getPercentError(values.quotaCodexReservePercent),
     quotaClaudeReservePercent: getPercentError(values.quotaClaudeReservePercent),
+    quotaCredentialProbeInterval: getNonNegativeDurationError(values.quotaCredentialProbeInterval),
+    quotaBankedResetAutoUseBefore: getNonNegativeDurationError(
+      values.quotaBankedResetAutoUseBefore
+    ),
     'streaming.keepaliveSeconds': getIntegerError(values.streaming.keepaliveSeconds),
     'streaming.bootstrapRetries': getIntegerError(values.streaming.bootstrapRetries),
     'streaming.nonstreamKeepaliveInterval': getIntegerError(
@@ -1275,6 +1295,8 @@ function getNextDirtyFields(
       'quotaCodexDailyPacing',
       'quotaClaudeReservePercent',
       'quotaClaudeDailyPacing',
+      'quotaCredentialProbeInterval',
+      'quotaBankedResetAutoUseBefore',
       'quotaAntigravityCredits',
       'routingStrategy',
       'routingSessionAffinity',
@@ -1556,6 +1578,8 @@ function parseVisualValuesFromYaml(yamlContent: string): VisualConfigValues {
     quotaCodexDailyPacing: Boolean(quotaExceeded?.['codex-daily-pacing'] ?? false),
     quotaClaudeReservePercent: String(quotaExceeded?.['claude-reserve-percent'] ?? ''),
     quotaClaudeDailyPacing: Boolean(quotaExceeded?.['claude-daily-pacing'] ?? false),
+    quotaCredentialProbeInterval: String(quotaExceeded?.['credential-probe-interval'] ?? ''),
+    quotaBankedResetAutoUseBefore: String(quotaExceeded?.['banked-reset-auto-use-before'] ?? ''),
     quotaAntigravityCredits: Boolean(antigravity?.['antigravity-credits'] ?? false),
 
     routingStrategy: parseRoutingStrategy(routing?.strategy),
@@ -2009,7 +2033,9 @@ export function useVisualConfig() {
           dirtyFields.has('quotaCodexReservePercent') ||
           dirtyFields.has('quotaCodexDailyPacing') ||
           dirtyFields.has('quotaClaudeReservePercent') ||
-          dirtyFields.has('quotaClaudeDailyPacing');
+          dirtyFields.has('quotaClaudeDailyPacing') ||
+          dirtyFields.has('quotaCredentialProbeInterval') ||
+          dirtyFields.has('quotaBankedResetAutoUseBefore');
         if (quotaDirty) {
           ensureMapInDoc(doc, ['quota-exceeded']);
           if (dirtyFields.has('quotaCodexReservePercent')) {
@@ -2031,6 +2057,20 @@ export function useVisualConfig() {
           }
           if (dirtyFields.has('quotaClaudeDailyPacing')) {
             doc.setIn(['quota-exceeded', 'claude-daily-pacing'], values.quotaClaudeDailyPacing);
+          }
+          if (dirtyFields.has('quotaCredentialProbeInterval')) {
+            setDurationInDoc(
+              doc,
+              ['quota-exceeded', 'credential-probe-interval'],
+              values.quotaCredentialProbeInterval
+            );
+          }
+          if (dirtyFields.has('quotaBankedResetAutoUseBefore')) {
+            setDurationInDoc(
+              doc,
+              ['quota-exceeded', 'banked-reset-auto-use-before'],
+              values.quotaBankedResetAutoUseBefore
+            );
           }
           deleteIfMapEmpty(doc, ['quota-exceeded']);
         }

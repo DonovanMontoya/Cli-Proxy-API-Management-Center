@@ -220,3 +220,34 @@ describe('v8 scalar read/write path parity', () => {
     });
   }
 });
+
+describe('quota-exceeded duration settings', () => {
+  const source =
+    'quota-exceeded:\n  credential-probe-interval: 10m\n  banked-reset-auto-use-before: 5m\n';
+
+  test('reads, rewrites, and validates Go durations', () => {
+    const config = runVisualConfig(source);
+    expect(config.visualValues).toMatchObject({
+      quotaCredentialProbeInterval: '10m',
+      quotaBankedResetAutoUseBefore: '5m',
+    });
+    const output = runVisualConfig(source, [
+      { quotaCredentialProbeInterval: '0', quotaBankedResetAutoUseBefore: '1h30m' },
+    ]).applyVisualChangesToYaml(source);
+    expect(parseYaml(output)['quota-exceeded']).toEqual({
+      'credential-probe-interval': '0',
+      'banked-reset-auto-use-before': '1h30m',
+    });
+    expect(
+      runVisualConfig(source, [{ quotaBankedResetAutoUseBefore: 'soon' }]).visualValidationErrors
+        ?.quotaBankedResetAutoUseBefore
+    ).toBe('invalid_duration');
+  });
+
+  test('clearing a duration removes the key instead of writing an empty string', () => {
+    const output = runVisualConfig(source, [
+      { quotaCredentialProbeInterval: '', quotaBankedResetAutoUseBefore: '' },
+    ]).applyVisualChangesToYaml(source);
+    expect(parseYaml(output)).not.toHaveProperty('quota-exceeded');
+  });
+});

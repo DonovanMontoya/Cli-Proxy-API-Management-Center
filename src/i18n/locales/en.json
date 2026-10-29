@@ -1473,6 +1473,10 @@
         "quota": {
           "title": "Usage Limits",
           "description": "Global Codex and Claude usage-limit defaults",
+          "credential_probe_interval": "Credential probe interval",
+          "credential_probe_interval_desc": "Clear credential quota cooldowns at this interval so the next request re-probes upstream. Use a duration such as 5m; 0 or empty turns it off.",
+          "banked_reset_auto_use_before": "Auto-use banked resets before expiry",
+          "banked_reset_auto_use_before_desc": "Spend a banked Codex or Claude usage reset this long before it expires so it isn't lost (for example 5m). 0 disables.",
           "codex_limits_title": "Codex usage limits",
           "codex_limits_desc": "Defaults for every Codex account. Override them per account with the Limits button on the Quota page.",
           "codex_reserve_percent": "Reserve (%)",

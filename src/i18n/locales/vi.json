@@ -1261,6 +1261,10 @@
         "quota": {
           "title": "Giới hạn sử dụng",
           "description": "Mặc định giới hạn sử dụng toàn cục cho Codex và Claude",
+          "credential_probe_interval": "Chu kỳ kiểm tra lại credential",
+          "credential_probe_interval_desc": "Xóa thời gian chờ quota của credential theo chu kỳ này để yêu cầu tiếp theo kiểm tra lại upstream. Nhập khoảng thời gian như 5m; 0 hoặc để trống để tắt.",
+          "banked_reset_auto_use_before": "Tự dùng lượt đặt lại trước khi hết hạn",
+          "banked_reset_auto_use_before_desc": "Dùng lượt đặt lại mức sử dụng đã lưu của Codex hoặc Claude trước khi hết hạn một khoảng như vậy để không bị lãng phí (ví dụ 5m). 0 để tắt.",
           "codex_limits_title": "Giới hạn sử dụng Codex",
           "codex_limits_desc": "Mặc định cho mọi tài khoản Codex. Ghi đè cho từng tài khoản bằng nút Giới hạn trên trang Quota.",
           "codex_reserve_percent": "Dự trữ (%)",

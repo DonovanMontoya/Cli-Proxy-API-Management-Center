@@ -558,6 +558,22 @@ export const CONFIG_FIELD_SEARCH_INDEX: ConfigFieldSearchEntry[] = [
     yamlKeys: ['quota-exceeded', 'claude-daily-pacing'],
     keywords: ['claude', 'usage limit', 'weekly', 'pace'],
   },
+  {
+    fieldId: 'quotaCredentialProbeInterval',
+    sectionId: 'quota',
+    labelKey: L('sections.quota.credential_probe_interval'),
+    hintKey: L('sections.quota.credential_probe_interval_desc'),
+    yamlKeys: ['quota-exceeded', 'credential-probe-interval'],
+    keywords: ['cooldown', 'probe', 'quota exceeded'],
+  },
+  {
+    fieldId: 'quotaBankedResetAutoUseBefore',
+    sectionId: 'quota',
+    labelKey: L('sections.quota.banked_reset_auto_use_before'),
+    hintKey: L('sections.quota.banked_reset_auto_use_before_desc'),
+    yamlKeys: ['quota-exceeded', 'banked-reset-auto-use-before'],
+    keywords: ['codex', 'claude', 'banked reset', 'reset credit', 'expiry'],
+  },
   // ── streaming ─────────────────────────────────────────────────────────────
   {
     fieldId: 'streamingKeepaliveSeconds',

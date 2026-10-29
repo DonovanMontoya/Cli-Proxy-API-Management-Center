@@ -567,7 +567,6 @@
     "reset_confirm_button": "確認重置",
     "reset_not_confirmed": "尚未確認額度重置成功，請重新整理額度後再決定是否重試。",
     "reset_cooldown_failed": "額度已重置，但代理冷卻清除失敗。請在原連線的認證檔案頁面使用「清除冷卻」，不要再次消耗重置卡。",
-
     "reset_success": "已重置「{{name}}」的 Codex 配額",
     "reset_failed": "重置「{{name}}」的 Codex 配額失敗：{{message}}",
     "plan_plus": "Plus",
@@ -1500,6 +1499,10 @@
         "quota": {
           "title": "用量限制",
           "description": "Codex 與 Claude 用量限制的全域預設值",
+          "credential_probe_interval": "憑證探測間隔",
+          "credential_probe_interval_desc": "依此間隔清除憑證的配額冷卻，讓下一次請求重新探測上游。填寫時長，例如 5m；0 或留空表示關閉。",
+          "banked_reset_auto_use_before": "到期前自動使用已存重置",
+          "banked_reset_auto_use_before_desc": "在 Codex 或 Claude 已存重置到期前的這段時間內自動使用，避免浪費（例如 5m）。0 表示關閉。",
           "codex_limits_title": "Codex 用量限制",
           "codex_limits_desc": "所有 Codex 帳號的預設值。可在額度頁面透過「用量限制」按鈕為單一帳號覆寫。",
           "codex_reserve_percent": "保留額度 (%)",

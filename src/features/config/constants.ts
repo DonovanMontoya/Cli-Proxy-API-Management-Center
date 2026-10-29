@@ -79,7 +79,12 @@ export const SECTION_VALIDATION_FIELDS: Record<VisualSectionId, readonly VisualC
       'videoResultAuthCacheTTL',
     ],
     logging: ['errorLogsMaxFiles', 'logsMaxTotalSizeMb', 'redisUsageQueueRetentionSeconds'],
-    quota: ['quotaCodexReservePercent', 'quotaClaudeReservePercent'],
+    quota: [
+      'quotaCodexReservePercent',
+      'quotaClaudeReservePercent',
+      'quotaCredentialProbeInterval',
+      'quotaBankedResetAutoUseBefore',
+    ],
     streaming: [
       'streaming.keepaliveSeconds',
       'streaming.bootstrapRetries',
@@ -184,6 +189,8 @@ export const FIELD_VALUE_KEYS: Record<string, readonly string[]> = {
   quotaCodexDailyPacing: ['quotaCodexDailyPacing'],
   quotaClaudeReservePercent: ['quotaClaudeReservePercent'],
   quotaClaudeDailyPacing: ['quotaClaudeDailyPacing'],
+  quotaCredentialProbeInterval: ['quotaCredentialProbeInterval'],
+  quotaBankedResetAutoUseBefore: ['quotaBankedResetAutoUseBefore'],
   // ── streaming ─────────────────────────────────────────────────────────────
   streamingKeepaliveSeconds: ['streaming.keepaliveSeconds'],
   streamingBootstrapRetries: ['streaming.bootstrapRetries'],

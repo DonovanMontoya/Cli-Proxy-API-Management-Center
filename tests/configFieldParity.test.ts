@@ -155,6 +155,8 @@ describe('v8 YAML search paths', () => {
     ['quotaCodexDailyPacing', 'quota-exceeded.codex-daily-pacing'],
     ['quotaClaudeReservePercent', 'quota-exceeded.claude-reserve-percent'],
     ['quotaClaudeDailyPacing', 'quota-exceeded.claude-daily-pacing'],
+    ['quotaCredentialProbeInterval', 'quota-exceeded.credential-probe-interval'],
+    ['quotaBankedResetAutoUseBefore', 'quota-exceeded.banked-reset-auto-use-before'],
     ['quotaAntigravityCredits', 'oauth.providers.antigravity.antigravity-credits'],
     ['wsAuth', 'oauth.providers.aistudio.ws-auth'],
     ['codexHeaderUserAgent', 'oauth.providers.codex.header-defaults.user-agent'],
